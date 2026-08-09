@@ -1,0 +1,29 @@
+# Environnement virtuel
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Variables secrètes
+.env
+.env.*
+!.env.example
+
+# VS Code
+.vscode/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Next.js
+node_modules/
+.next/
