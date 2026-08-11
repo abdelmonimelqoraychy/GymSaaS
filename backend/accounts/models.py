@@ -4,11 +4,8 @@ from django.db import models
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        SUPER_ADMIN = "SUPER_ADMIN", "Super administrateur"
-        GYM_OWNER = "GYM_OWNER", "Propriétaire"
-        MANAGER = "MANAGER", "Responsable"
-        RECEPTIONIST = "RECEPTIONIST", "Réceptionniste"
-        COACH = "COACH", "Coach"
+        SUPER_ADMIN = "SUPER_ADMIN", "Super-administrateur"
+        COORDINATOR = "COORDINATOR", "Coordinateur"
         MEMBER = "MEMBER", "Adhérent"
 
     role = models.CharField(
