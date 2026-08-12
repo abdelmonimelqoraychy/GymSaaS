@@ -130,3 +130,5 @@ MAILERS = {
     },
 }
 AUTH_USER_MODEL = "accounts.User"
+LOGIN_REDIRECT_URL = "/api/"
+LOGOUT_REDIRECT_URL = "/api-auth/login/"
