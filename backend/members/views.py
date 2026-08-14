@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets
+from rest_framework import filters, permissions, viewsets
 
 from .models import Member, MembershipPlan, Payment, Subscription
 from .permissions import (
@@ -23,6 +23,23 @@ def is_manager(user):
 class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = MemberSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    )
+    search_fields = (
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+        "user__email",
+        "user__phone",
+    )
+    ordering_fields = (
+        "joined_at",
+        "birth_date",
+        "is_active",
+    )
+    ordering = ("-joined_at",)
 
     def get_queryset(self):
         queryset = Member.objects.select_related("user").all()
@@ -33,7 +50,12 @@ class MemberViewSet(viewsets.ModelViewSet):
         return queryset.filter(user=self.request.user)
 
     def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
+        if self.action in (
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ):
             return [IsSuperAdminOrCoordinator()]
 
         return [permissions.IsAuthenticated()]
@@ -43,11 +65,44 @@ class MembershipPlanViewSet(viewsets.ModelViewSet):
     queryset = MembershipPlan.objects.all()
     serializer_class = MembershipPlanSerializer
     permission_classes = (IsManagerOrReadOnly,)
+    filter_backends = (
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    )
+    search_fields = (
+        "name",
+        "description",
+    )
+    ordering_fields = (
+        "name",
+        "duration_days",
+        "price",
+        "is_active",
+    )
+    ordering = ("price",)
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    )
+    search_fields = (
+        "member__user__username",
+        "member__user__first_name",
+        "member__user__last_name",
+        "member__user__email",
+        "plan__name",
+    )
+    ordering_fields = (
+        "start_date",
+        "end_date",
+        "created_at",
+        "is_suspended",
+    )
+    ordering = ("-start_date",)
 
     def get_queryset(self):
         queryset = Subscription.objects.select_related(
@@ -61,7 +116,12 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         return queryset.filter(member__user=self.request.user)
 
     def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
+        if self.action in (
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ):
             return [IsSuperAdminOrCoordinator()]
 
         return [permissions.IsAuthenticated()]
@@ -70,6 +130,24 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    )
+    search_fields = (
+        "reference",
+        "notes",
+        "subscription__member__user__username",
+        "subscription__member__user__first_name",
+        "subscription__member__user__last_name",
+        "subscription__plan__name",
+    )
+    ordering_fields = (
+        "amount",
+        "paid_at",
+        "method",
+    )
+    ordering = ("-paid_at",)
 
     def get_queryset(self):
         queryset = Payment.objects.select_related(
@@ -85,7 +163,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
         )
 
     def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
+        if self.action in (
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ):
             return [IsSuperAdminOrCoordinator()]
 
         return [permissions.IsAuthenticated()]
