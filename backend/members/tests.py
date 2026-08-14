@@ -51,7 +51,7 @@ class MembersPermissionsTests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED,
         )
 
     def test_member_sees_only_own_profile(self):
