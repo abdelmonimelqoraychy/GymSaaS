@@ -1,9 +1,11 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Member, MembershipPlan, Subscription
+from .models import Member, MembershipPlan, Payment, Subscription
 
 
 User = get_user_model()
@@ -16,14 +18,18 @@ class MembersPermissionsTests(APITestCase):
             password="TestPassword123!",
             role=User.Role.MEMBER,
         )
-        self.member = Member.objects.create(user=self.member_user)
+        self.member = Member.objects.create(
+            user=self.member_user,
+        )
 
         self.other_user = User.objects.create_user(
             username="member2",
             password="TestPassword123!",
             role=User.Role.MEMBER,
         )
-        self.other_member = Member.objects.create(user=self.other_user)
+        self.other_member = Member.objects.create(
+            user=self.other_user,
+        )
 
         self.coordinator = User.objects.create_user(
             username="coordinator",
@@ -55,16 +61,26 @@ class MembersPermissionsTests(APITestCase):
         )
 
     def test_member_sees_only_own_profile(self):
-        self.client.force_authenticate(user=self.member_user)
+        self.client.force_authenticate(
+            user=self.member_user,
+        )
 
         response = self.client.get(reverse("member-list"))
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.member.id)
+        self.assertEqual(
+            response.data[0]["id"],
+            self.member.id,
+        )
 
     def test_member_cannot_access_another_profile(self):
-        self.client.force_authenticate(user=self.member_user)
+        self.client.force_authenticate(
+            user=self.member_user,
+        )
 
         response = self.client.get(
             reverse(
@@ -79,11 +95,18 @@ class MembersPermissionsTests(APITestCase):
         )
 
     def test_member_sees_only_own_subscription(self):
-        self.client.force_authenticate(user=self.member_user)
+        self.client.force_authenticate(
+            user=self.member_user,
+        )
 
-        response = self.client.get(reverse("subscription-list"))
+        response = self.client.get(
+            reverse("subscription-list"),
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
         self.assertEqual(len(response.data), 1)
         self.assertEqual(
             response.data[0]["id"],
@@ -91,7 +114,9 @@ class MembersPermissionsTests(APITestCase):
         )
 
     def test_member_cannot_create_plan(self):
-        self.client.force_authenticate(user=self.member_user)
+        self.client.force_authenticate(
+            user=self.member_user,
+        )
 
         response = self.client.post(
             reverse("plan-list"),
@@ -111,15 +136,22 @@ class MembersPermissionsTests(APITestCase):
         )
 
     def test_coordinator_sees_all_members(self):
-        self.client.force_authenticate(user=self.coordinator)
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
 
         response = self.client.get(reverse("member-list"))
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
         self.assertEqual(len(response.data), 2)
 
     def test_coordinator_can_create_plan(self):
-        self.client.force_authenticate(user=self.coordinator)
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
 
         response = self.client.post(
             reverse("plan-list"),
@@ -136,4 +168,330 @@ class MembersPermissionsTests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_201_CREATED,
+        )
+
+    def test_plan_duration_must_be_positive(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("plan-list"),
+            {
+                "name": "Formule invalide",
+                "duration_days": 0,
+                "price": "300.00",
+                "description": "",
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("duration_days", response.data)
+
+    def test_plan_price_must_be_positive(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("plan-list"),
+            {
+                "name": "Formule gratuite",
+                "duration_days": 30,
+                "price": "0.00",
+                "description": "",
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("price", response.data)
+
+    def test_plan_name_must_be_unique(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("plan-list"),
+            {
+                "name": "mensuel",
+                "duration_days": 60,
+                "price": "500.00",
+                "description": "",
+                "is_active": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("name", response.data)
+
+    def test_cannot_subscribe_inactive_member(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        self.other_member.is_active = False
+        self.other_member.save()
+
+        response = self.client.post(
+            reverse("subscription-list"),
+            {
+                "member": self.other_member.id,
+                "plan": self.plan.id,
+                "start_date": "2026-09-01",
+                "is_suspended": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("member", response.data)
+
+    def test_cannot_use_inactive_plan(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        self.plan.is_active = False
+        self.plan.save()
+
+        response = self.client.post(
+            reverse("subscription-list"),
+            {
+                "member": self.other_member.id,
+                "plan": self.plan.id,
+                "start_date": "2026-09-01",
+                "is_suspended": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("plan", response.data)
+
+    def test_cannot_create_overlapping_subscription(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("subscription-list"),
+            {
+                "member": self.member.id,
+                "plan": self.plan.id,
+                "start_date": str(
+                    self.subscription.start_date
+                ),
+                "is_suspended": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("member", response.data)
+
+    def test_coordinator_can_create_partial_payment(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("payment-list"),
+            {
+                "subscription": self.subscription.id,
+                "amount": "100.00",
+                "method": Payment.Method.CASH,
+                "reference": "PAY-001",
+                "notes": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertEqual(
+            response.data["remaining_amount"],
+            Decimal("200.00"),
+        )
+
+    def test_payment_amount_must_be_positive(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("payment-list"),
+            {
+                "subscription": self.subscription.id,
+                "amount": "0.00",
+                "method": Payment.Method.CASH,
+                "reference": "",
+                "notes": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("amount", response.data)
+        self.assertEqual(Payment.objects.count(), 0)
+
+    def test_payments_cannot_exceed_plan_price(self):
+        Payment.objects.create(
+            subscription=self.subscription,
+            amount="100.00",
+            method=Payment.Method.CASH,
+        )
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            reverse("payment-list"),
+            {
+                "subscription": self.subscription.id,
+                "amount": "250.00",
+                "method": Payment.Method.CARD,
+                "reference": "PAY-002",
+                "notes": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("amount", response.data)
+        self.assertEqual(Payment.objects.count(), 1)
+
+    def test_member_cannot_create_payment(self):
+        self.client.force_authenticate(
+            user=self.member_user,
+        )
+
+        response = self.client.post(
+            reverse("payment-list"),
+            {
+                "subscription": self.subscription.id,
+                "amount": "100.00",
+                "method": Payment.Method.CASH,
+                "reference": "",
+                "notes": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+        self.assertEqual(Payment.objects.count(), 0)
+    def test_coordinator_can_search_plans(self):
+        MembershipPlan.objects.create(
+            name="Annuel Premium",
+            duration_days=365,
+            price="2500.00",
+        )
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            reverse("plan-list"),
+            {"search": "Premium"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["name"],
+            "Annuel Premium",
+        )
+
+    def test_plans_can_be_ordered_by_price(self):
+        MembershipPlan.objects.create(
+            name="Hebdomadaire",
+            duration_days=7,
+            price="100.00",
+        )
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            reverse("plan-list"),
+            {"ordering": "price"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data[0]["name"],
+            "Hebdomadaire",
+        )
+
+    def test_coordinator_can_search_payments_by_reference(self):
+        Payment.objects.create(
+            subscription=self.subscription,
+            amount="100.00",
+            method=Payment.Method.CASH,
+            reference="PAY-SEARCH-001",
+        )
+        Payment.objects.create(
+            subscription=self.subscription,
+            amount="50.00",
+            method=Payment.Method.CARD,
+            reference="AUTRE-REFERENCE",
+        )
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            reverse("payment-list"),
+            {"search": "PAY-SEARCH-001"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["reference"],
+            "PAY-SEARCH-001",
         )
