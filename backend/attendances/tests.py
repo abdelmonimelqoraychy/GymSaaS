@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
@@ -54,9 +56,14 @@ class AttendanceAPITests(APITestCase):
         )
 
         self.list_url = reverse("attendance-list")
+        self.qr_checkin_url = reverse(
+            "attendance-qr-checkin",
+        )
 
     def test_anonymous_user_cannot_access_attendances(self):
-        response = self.client.get(self.list_url)
+        response = self.client.get(
+            self.list_url,
+        )
 
         self.assertEqual(
             response.status_code,
@@ -68,7 +75,9 @@ class AttendanceAPITests(APITestCase):
             user=self.member_user,
         )
 
-        response = self.client.get(self.list_url)
+        response = self.client.get(
+            self.list_url,
+        )
 
         self.assertEqual(
             response.status_code,
@@ -84,7 +93,9 @@ class AttendanceAPITests(APITestCase):
             self.list_url,
             {
                 "member": self.member.id,
-                "entry_method": Attendance.EntryMethod.MANUAL,
+                "entry_method": (
+                    Attendance.EntryMethod.MANUAL
+                ),
                 "notes": "",
             },
             format="json",
@@ -100,13 +111,18 @@ class AttendanceAPITests(APITestCase):
         )
 
         attendance = Attendance.objects.get()
+
         self.assertEqual(
             attendance.recorded_by,
             self.coordinator,
         )
-        self.assertIsNone(attendance.check_out)
+        self.assertIsNone(
+            attendance.check_out,
+        )
 
-    def test_member_without_subscription_cannot_check_in(self):
+    def test_member_without_subscription_cannot_check_in(
+        self,
+    ):
         self.client.force_authenticate(
             user=self.coordinator,
         )
@@ -114,8 +130,12 @@ class AttendanceAPITests(APITestCase):
         response = self.client.post(
             self.list_url,
             {
-                "member": self.member_without_subscription.id,
-                "entry_method": Attendance.EntryMethod.MANUAL,
+                "member": (
+                    self.member_without_subscription.id
+                ),
+                "entry_method": (
+                    Attendance.EntryMethod.MANUAL
+                ),
             },
             format="json",
         )
@@ -124,13 +144,18 @@ class AttendanceAPITests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
-        self.assertIn("member", response.data)
+        self.assertIn(
+            "member",
+            response.data,
+        )
         self.assertEqual(
             Attendance.objects.count(),
             0,
         )
 
-    def test_member_cannot_have_two_open_attendances(self):
+    def test_member_cannot_have_two_open_attendances(
+        self,
+    ):
         Attendance.objects.create(
             member=self.member,
             recorded_by=self.coordinator,
@@ -143,7 +168,9 @@ class AttendanceAPITests(APITestCase):
             self.list_url,
             {
                 "member": self.member.id,
-                "entry_method": Attendance.EntryMethod.MANUAL,
+                "entry_method": (
+                    Attendance.EntryMethod.MANUAL
+                ),
             },
             format="json",
         )
@@ -152,7 +179,10 @@ class AttendanceAPITests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
-        self.assertIn("member", response.data)
+        self.assertIn(
+            "member",
+            response.data,
+        )
         self.assertEqual(
             Attendance.objects.count(),
             1,
@@ -170,7 +200,9 @@ class AttendanceAPITests(APITestCase):
         response = self.client.post(
             reverse(
                 "attendance-checkout",
-                kwargs={"pk": attendance.id},
+                kwargs={
+                    "pk": attendance.id,
+                },
             ),
             format="json",
         )
@@ -181,7 +213,10 @@ class AttendanceAPITests(APITestCase):
         )
 
         attendance.refresh_from_db()
-        self.assertIsNotNone(attendance.check_out)
+
+        self.assertIsNotNone(
+            attendance.check_out,
+        )
 
     def test_checkout_cannot_be_registered_twice(self):
         attendance = Attendance.objects.create(
@@ -194,7 +229,9 @@ class AttendanceAPITests(APITestCase):
 
         checkout_url = reverse(
             "attendance-checkout",
-            kwargs={"pk": attendance.id},
+            kwargs={
+                "pk": attendance.id,
+            },
         )
 
         first_response = self.client.post(
@@ -213,4 +250,99 @@ class AttendanceAPITests(APITestCase):
         self.assertEqual(
             second_response.status_code,
             status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_coordinator_can_register_qr_check_in(
+        self,
+    ):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            self.qr_checkin_url,
+            {
+                "qr_code": str(
+                    self.member.qr_code,
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(
+            Attendance.objects.count(),
+            1,
+        )
+
+        attendance = Attendance.objects.get()
+
+        self.assertEqual(
+            attendance.member,
+            self.member,
+        )
+        self.assertEqual(
+            attendance.entry_method,
+            Attendance.EntryMethod.QR_CODE,
+        )
+        self.assertEqual(
+            attendance.recorded_by,
+            self.coordinator,
+        )
+
+    def test_invalid_qr_code_format_is_rejected(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            self.qr_checkin_url,
+            {
+                "qr_code": "qr-code-invalide",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "qr_code",
+            response.data,
+        )
+        self.assertEqual(
+            Attendance.objects.count(),
+            0,
+        )
+
+    def test_unknown_qr_code_is_rejected(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.post(
+            self.qr_checkin_url,
+            {
+                "qr_code": str(
+                    uuid.uuid4(),
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "qr_code",
+            response.data,
+        )
+        self.assertEqual(
+            Attendance.objects.count(),
+            0,
         )
