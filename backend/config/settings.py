@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "members",
     "contacts",
     "dashboard",
+    "attendances",
 ]
 
 
