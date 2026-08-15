@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "gyms",
     "members",
     "contacts",
+    "dashboard",
 ]
 
 
