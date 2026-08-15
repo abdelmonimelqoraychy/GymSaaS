@@ -1,16 +1,21 @@
 import { Outlet } from "react-router";
+
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import "../styles/dashboard-shell.css";
 
 function DashboardLayout() {
   return (
-    <div>
+    <div className="dashboard-shell">
       <Sidebar />
 
-      <main style={{ marginLeft: 240 }}>
+      <div className="dashboard-content">
         <Topbar />
-        <Outlet />
-      </main>
+
+        <main className="dashboard-outlet">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

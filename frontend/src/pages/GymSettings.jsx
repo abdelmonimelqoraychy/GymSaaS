@@ -6,8 +6,9 @@ function GymSettings() {
       <div className="card">
         <h2>Informations de la salle</h2>
         <p className="muted">
-          Nom, logo, adresse, ville, téléphone, email et couleurs seront
-          connectés au modèle Gym du backend.
+          Le modèle Django <strong>Gym</strong> existe, mais le projet actuel ne
+          contient pas encore d'endpoint API pour le lire ou le modifier.
+          Cette page ne présente donc aucune donnée inventée.
         </p>
       </div>
     </div>

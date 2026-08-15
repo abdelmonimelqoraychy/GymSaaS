@@ -1,78 +1,133 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
+
+import api from "../services/api";
+import heroImage from "../assets/hero.png";
+import "../styles/login.css";
 
 function Login() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
 
-  function handleSubmit(event) {
+  const [form, setForm] = useState({
+    username: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Temporaire : à remplacer par l'API Django /api/login/
-    navigate("/dashboard");
+    try {
+      const response = await api.post("/auth/login/", {
+        username: form.username.trim(),
+        password: form.password,
+      });
+
+      localStorage.setItem("authToken", response.data.token);
+      localStorage.setItem(
+        "authUser",
+        JSON.stringify(response.data.user)
+      );
+
+      navigate("/dashboard", { replace: true });
+    } catch (requestError) {
+      const message =
+        requestError.response?.data?.detail ||
+        "Impossible de se connecter au serveur.";
+
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div style={styles.page}>
-      <form style={styles.form} onSubmit={handleSubmit}>
-        <div style={styles.logo}>GYMSAAS</div>
-        <h1>Connexion</h1>
-        <p className="muted">Connectez-vous à votre espace de gestion.</p>
+    <main className="login-page">
+      <section
+        className="login-image-panel"
+        style={{ backgroundImage: `url(${heroImage})` }}
+      >
+        <div className="login-image-overlay">
+          <Link className="brand" to="/">
+            GYM<span>SAAS</span>
+          </Link>
 
-        <label>Nom d'utilisateur</label>
-        <input
-          style={styles.input}
-          value={form.username}
-          onChange={(e) => setForm({ ...form, username: e.target.value })}
-          required
-        />
+          <div>
+            <span className="eyebrow">ESPACE DE GESTION</span>
+            <h1>Votre salle. Vos membres. Une seule plateforme.</h1>
+            <p>
+              Retrouvez vos abonnements et paiements depuis votre espace
+              sécurisé.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        <label>Mot de passe</label>
-        <input
-          style={styles.input}
-          type="password"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          required
-        />
+      <section className="login-form-panel">
+        <form className="login-card" onSubmit={handleSubmit}>
+          <Link className="login-mobile-brand brand" to="/">
+            GYM<span>SAAS</span>
+          </Link>
 
-        <button className="btn btn-primary" type="submit">
-          Se connecter
-        </button>
-      </form>
-    </div>
+          <span className="eyebrow">BIENVENUE</span>
+          <h2>Connexion</h2>
+          <p className="muted">
+            Connectez-vous avec votre compte Django.
+          </p>
+
+          {error && <div className="form-error">{error}</div>}
+
+          <label htmlFor="username">Nom d'utilisateur</label>
+          <input
+            id="username"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            autoComplete="username"
+            placeholder="Votre nom d'utilisateur"
+            required
+          />
+
+          <label htmlFor="password">Mot de passe</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            placeholder="Votre mot de passe"
+            required
+          />
+
+          <button
+            className="btn btn-primary btn-large login-submit"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Connexion..." : "Se connecter"}
+          </button>
+
+          <Link className="back-home" to="/">
+            ← Retour à l'accueil
+          </Link>
+        </form>
+      </section>
+    </main>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "grid",
-    placeItems: "center",
-    padding: 20,
-  },
-  form: {
-    width: "100%",
-    maxWidth: 420,
-    padding: 30,
-    borderRadius: 16,
-    background: "#15181d",
-    border: "1px solid #252a32",
-    display: "grid",
-    gap: 12,
-  },
-  logo: {
-    color: "#ff5a1f",
-    fontWeight: 900,
-    fontSize: 24,
-  },
-  input: {
-    padding: 12,
-    borderRadius: 9,
-    border: "1px solid #343a44",
-    background: "#0f1115",
-    color: "#fff",
-  },
-};
 
 export default Login;

@@ -1,37 +1,64 @@
+import "../styles/dashboard-shell.css";
+
 function Topbar() {
+  let user = null;
+
+  try {
+    user = JSON.parse(localStorage.getItem("authUser"));
+  } catch {
+    user = null;
+  }
+
+  const displayName =
+    user?.full_name ||
+    user?.first_name ||
+    user?.username ||
+    "Utilisateur";
+
+  const initials = String(displayName)
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
   return (
-    <header style={styles.header}>
-      <div>
-        <strong>Adri Gym</strong>
-        <div style={styles.small}>Espace de gestion</div>
+    <header className="app-topbar">
+      <div className="topbar-search">
+        <SearchIcon />
+        <input
+          type="search"
+          placeholder="Rechercher un membre, une formule, un paiement..."
+          aria-label="Rechercher"
+        />
       </div>
 
-      <div style={styles.user}>Admin</div>
+      <div className="topbar-user">
+        <div className="topbar-avatar">{initials}</div>
+
+        <div className="topbar-user-text">
+          <strong>{displayName}</strong>
+          <span>
+            {user?.role === "SUPER_ADMIN"
+              ? "Administrateur"
+              : user?.role === "COORDINATOR"
+                ? "Coordinateur"
+                : "Utilisateur"}
+          </span>
+        </div>
+      </div>
     </header>
   );
 }
 
-const styles = {
-  header: {
-    height: 72,
-    background: "#101216",
-    borderBottom: "1px solid #252a32",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 28px",
-  },
-  small: {
-    color: "#9ca3af",
-    fontSize: 12,
-    marginTop: 3,
-  },
-  user: {
-    background: "#1b1f25",
-    border: "1px solid #303640",
-    borderRadius: 999,
-    padding: "9px 14px",
-  },
-};
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
 
 export default Topbar;
