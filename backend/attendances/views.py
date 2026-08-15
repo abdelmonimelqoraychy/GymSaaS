@@ -3,10 +3,14 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from members.models import Member
 from members.permissions import IsSuperAdminOrCoordinator
 
 from .models import Attendance
-from .serializers import AttendanceSerializer
+from .serializers import (
+    AttendanceSerializer,
+    QRCodeCheckInSerializer,
+)
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -40,6 +44,55 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(
             recorded_by=self.request.user,
+        )
+
+    @action(
+        detail=False,
+        methods=("post",),
+        url_path="qr-checkin",
+    )
+    def qr_checkin(self, request):
+        qr_serializer = QRCodeCheckInSerializer(
+            data=request.data,
+        )
+        qr_serializer.is_valid(
+            raise_exception=True,
+        )
+
+        qr_code = qr_serializer.validated_data["qr_code"]
+
+        try:
+            member = Member.objects.get(
+                qr_code=qr_code,
+            )
+        except Member.DoesNotExist:
+            return Response(
+                {
+                    "qr_code": (
+                        "Ce QR code ne correspond "
+                        "à aucun membre."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        attendance_serializer = AttendanceSerializer(
+            data={
+                "member": member.id,
+                "entry_method": Attendance.EntryMethod.QR_CODE,
+            },
+            context=self.get_serializer_context(),
+        )
+        attendance_serializer.is_valid(
+            raise_exception=True,
+        )
+        attendance_serializer.save(
+            recorded_by=request.user,
+        )
+
+        return Response(
+            attendance_serializer.data,
+            status=status.HTTP_201_CREATED,
         )
 
     @action(

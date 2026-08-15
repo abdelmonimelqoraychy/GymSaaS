@@ -1,3 +1,4 @@
+import uuid
 from datetime import timedelta
 
 from django.conf import settings
@@ -13,6 +14,11 @@ class Member(models.Model):
         related_name="member_profile",
         verbose_name="Compte utilisateur",
     )
+    qr_code = models.UUIDField(
+    default=uuid.uuid4,
+    unique=True,
+    editable=False,
+)
     birth_date = models.DateField(
         blank=True,
         null=True,

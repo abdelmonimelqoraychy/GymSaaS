@@ -108,3 +108,5 @@ class AttendanceSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+class QRCodeCheckInSerializer(serializers.Serializer):
+    qr_code = serializers.UUIDField()
