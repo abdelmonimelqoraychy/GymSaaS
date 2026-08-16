@@ -1,6 +1,10 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .alert_views import (
+    PaymentAlertsView,
+    SubscriptionAlertsView,
+)
 from .portal_views import (
     MemberAttendancesView,
     MemberPaymentsView,
@@ -65,6 +69,16 @@ urlpatterns = [
         "me/qr-code/",
         MemberQRCodeView.as_view(),
         name="member-qr-code",
+    ),
+    path(
+        "alerts/subscriptions/",
+        SubscriptionAlertsView.as_view(),
+        name="subscription-alerts",
+    ),
+    path(
+        "alerts/payments/",
+        PaymentAlertsView.as_view(),
+        name="payment-alerts",
     ),
     *router.urls,
 ]
