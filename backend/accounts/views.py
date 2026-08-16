@@ -9,6 +9,9 @@ from rest_framework.views import APIView
 
 from members.serializers import MemberSerializer
 
+from .password_serializers import (
+    ChangePasswordSerializer,
+)
 from .serializers import (
     RegistrationSerializer,
     UserSerializer,
@@ -147,5 +150,42 @@ class CurrentUserView(APIView):
             UserSerializer(
                 request.user,
             ).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChangePasswordView(APIView):
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={
+                "request": request,
+            },
+        )
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        user = serializer.save()
+
+        Token.objects.filter(
+            user=user,
+        ).delete()
+
+        new_token = Token.objects.create(
+            user=user,
+        )
+
+        return Response(
+            {
+                "detail": (
+                    "Mot de passe modifié avec succès."
+                ),
+                "token": new_token.key,
+            },
             status=status.HTTP_200_OK,
         )

@@ -12,6 +12,7 @@ from .portal_views import (
     MemberQRCodeView,
     MemberSubscriptionView,
 )
+from .profile_views import MemberProfileUpdateView
 from .views import (
     MemberMeView,
     MemberViewSet,
@@ -50,6 +51,11 @@ urlpatterns = [
         "me/",
         MemberMeView.as_view(),
         name="member-me",
+    ),
+    path(
+        "me/profile/",
+        MemberProfileUpdateView.as_view(),
+        name="member-profile-update",
     ),
     path(
         "me/subscription/",
