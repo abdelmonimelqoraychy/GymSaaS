@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.serializers import UserSerializer
+from auditlogs.models import AuditLog
+from auditlogs.services import create_audit_log
 
 from .admin_serializers import (
     AdminMemberCreateSerializer,
@@ -25,6 +27,22 @@ class AdminMemberCreateView(APIView):
         )
 
         member = serializer.save()
+
+        create_audit_log(
+            request=request,
+            action=AuditLog.Action.CREATE,
+            entity=member,
+            description=(
+                "Création d’un membre par "
+                "l’administration."
+            ),
+            metadata={
+                "user_id": member.user_id,
+                "username": member.user.username,
+                "email": member.user.email,
+                "is_active": member.is_active,
+            },
+        )
 
         return Response(
             {

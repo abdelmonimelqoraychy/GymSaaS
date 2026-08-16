@@ -1,7 +1,14 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, permissions, viewsets
+from rest_framework import (
+    filters,
+    permissions,
+    viewsets,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from auditlogs.models import AuditLog
+from auditlogs.services import create_audit_log
 
 from .models import (
     Member,
@@ -104,6 +111,59 @@ class MemberViewSet(viewsets.ModelViewSet):
             permissions.IsAuthenticated(),
         ]
 
+    def perform_create(self, serializer):
+        member = serializer.save()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.CREATE,
+            entity=member,
+            description="Création d’un membre.",
+            metadata={
+                "username": member.user.username,
+                "email": member.user.email,
+            },
+        )
+
+    def perform_update(self, serializer):
+        was_active = serializer.instance.is_active
+        member = serializer.save()
+
+        action = AuditLog.Action.UPDATE
+
+        if was_active and not member.is_active:
+            action = AuditLog.Action.DEACTIVATE
+        elif not was_active and member.is_active:
+            action = AuditLog.Action.ACTIVATE
+
+        create_audit_log(
+            request=self.request,
+            action=action,
+            entity=member,
+            description="Modification d’un membre.",
+            metadata={
+                "username": member.user.username,
+                "is_active": member.is_active,
+            },
+        )
+
+    def perform_destroy(self, instance):
+        entity_id = str(instance.pk)
+        username = instance.user.username
+
+        instance.delete()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.DELETE,
+            entity_type="members.Member",
+            entity_id=entity_id,
+            description="Suppression d’un membre.",
+            metadata={
+                "username": username,
+            },
+        )
+
 
 class MembershipPlanViewSet(viewsets.ModelViewSet):
     queryset = MembershipPlan.objects.all()
@@ -126,6 +186,70 @@ class MembershipPlanViewSet(viewsets.ModelViewSet):
         "is_active",
     )
     ordering = ("price",)
+
+    def perform_create(self, serializer):
+        plan = serializer.save()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.CREATE,
+            entity=plan,
+            description=(
+                "Création d’une formule d’abonnement."
+            ),
+            metadata={
+                "name": plan.name,
+                "duration_days": plan.duration_days,
+                "price": plan.price,
+            },
+        )
+
+    def perform_update(self, serializer):
+        was_active = serializer.instance.is_active
+        plan = serializer.save()
+
+        action = AuditLog.Action.UPDATE
+
+        if was_active and not plan.is_active:
+            action = AuditLog.Action.DEACTIVATE
+        elif not was_active and plan.is_active:
+            action = AuditLog.Action.ACTIVATE
+
+        create_audit_log(
+            request=self.request,
+            action=action,
+            entity=plan,
+            description=(
+                "Modification d’une formule "
+                "d’abonnement."
+            ),
+            metadata={
+                "name": plan.name,
+                "duration_days": plan.duration_days,
+                "price": plan.price,
+                "is_active": plan.is_active,
+            },
+        )
+
+    def perform_destroy(self, instance):
+        entity_id = str(instance.pk)
+        name = instance.name
+
+        instance.delete()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.DELETE,
+            entity_type="members.MembershipPlan",
+            entity_id=entity_id,
+            description=(
+                "Suppression d’une formule "
+                "d’abonnement."
+            ),
+            metadata={
+                "name": name,
+            },
+        )
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
@@ -180,6 +304,80 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             permissions.IsAuthenticated(),
         ]
 
+    def perform_create(self, serializer):
+        subscription = serializer.save()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.CREATE,
+            entity=subscription,
+            description="Création d’un abonnement.",
+            metadata={
+                "member_id": subscription.member_id,
+                "member_name": str(
+                    subscription.member,
+                ),
+                "plan_id": subscription.plan_id,
+                "plan_name": subscription.plan.name,
+                "start_date": subscription.start_date,
+                "end_date": subscription.end_date,
+            },
+        )
+
+    def perform_update(self, serializer):
+        was_suspended = (
+            serializer.instance.is_suspended
+        )
+        subscription = serializer.save()
+
+        action = AuditLog.Action.UPDATE
+
+        if (
+            not was_suspended
+            and subscription.is_suspended
+        ):
+            action = AuditLog.Action.SUSPEND
+        elif (
+            was_suspended
+            and not subscription.is_suspended
+        ):
+            action = AuditLog.Action.ACTIVATE
+
+        create_audit_log(
+            request=self.request,
+            action=action,
+            entity=subscription,
+            description="Modification d’un abonnement.",
+            metadata={
+                "member_id": subscription.member_id,
+                "plan_id": subscription.plan_id,
+                "is_suspended": (
+                    subscription.is_suspended
+                ),
+                "start_date": subscription.start_date,
+                "end_date": subscription.end_date,
+            },
+        )
+
+    def perform_destroy(self, instance):
+        entity_id = str(instance.pk)
+        member_id = instance.member_id
+        plan_id = instance.plan_id
+
+        instance.delete()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.DELETE,
+            entity_type="members.Subscription",
+            entity_id=entity_id,
+            description="Suppression d’un abonnement.",
+            metadata={
+                "member_id": member_id,
+                "plan_id": plan_id,
+            },
+        )
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
@@ -232,3 +430,63 @@ class PaymentViewSet(viewsets.ModelViewSet):
         return [
             permissions.IsAuthenticated(),
         ]
+
+    def perform_create(self, serializer):
+        payment = serializer.save()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.PAYMENT,
+            entity=payment,
+            description="Enregistrement d’un paiement.",
+            metadata={
+                "subscription_id": (
+                    payment.subscription_id
+                ),
+                "member_id": (
+                    payment.subscription.member_id
+                ),
+                "amount": payment.amount,
+                "method": payment.method,
+                "reference": payment.reference,
+            },
+        )
+
+    def perform_update(self, serializer):
+        payment = serializer.save()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.UPDATE,
+            entity=payment,
+            description="Modification d’un paiement.",
+            metadata={
+                "subscription_id": (
+                    payment.subscription_id
+                ),
+                "amount": payment.amount,
+                "method": payment.method,
+                "reference": payment.reference,
+            },
+        )
+
+    def perform_destroy(self, instance):
+        entity_id = str(instance.pk)
+        subscription_id = instance.subscription_id
+        amount = instance.amount
+        reference = instance.reference
+
+        instance.delete()
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.DELETE,
+            entity_type="members.Payment",
+            entity_id=entity_id,
+            description="Suppression d’un paiement.",
+            metadata={
+                "subscription_id": subscription_id,
+                "amount": amount,
+                "reference": reference,
+            },
+        )

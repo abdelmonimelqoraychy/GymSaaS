@@ -7,6 +7,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from auditlogs.models import AuditLog
+from auditlogs.services import create_audit_log
 from members.serializers import MemberSerializer
 
 from .password_serializers import (
@@ -37,6 +39,21 @@ class RegisterView(APIView):
         )
 
         member = user.member_profile
+
+        create_audit_log(
+            request=request,
+            actor=user,
+            action=AuditLog.Action.CREATE,
+            entity=user,
+            description=(
+                "Inscription publique d’un membre."
+            ),
+            metadata={
+                "member_id": member.id,
+                "username": user.username,
+                "email": user.email,
+            },
+        )
 
         return Response(
             {
@@ -109,6 +126,18 @@ class LoginView(APIView):
             user=user,
         )
 
+        create_audit_log(
+            request=request,
+            actor=user,
+            action=AuditLog.Action.LOGIN,
+            entity=user,
+            description="Connexion réussie.",
+            metadata={
+                "username": user.username,
+                "role": user.role,
+            },
+        )
+
         return Response(
             {
                 "token": token.key,
@@ -126,6 +155,16 @@ class LogoutView(APIView):
     )
 
     def post(self, request):
+        create_audit_log(
+            request=request,
+            action=AuditLog.Action.LOGOUT,
+            entity=request.user,
+            description="Déconnexion réussie.",
+            metadata={
+                "username": request.user.username,
+            },
+        )
+
         Token.objects.filter(
             user=request.user,
         ).delete()
@@ -178,6 +217,21 @@ class ChangePasswordView(APIView):
 
         new_token = Token.objects.create(
             user=user,
+        )
+
+        create_audit_log(
+            request=request,
+            actor=user,
+            action=(
+                AuditLog.Action.PASSWORD_CHANGE
+            ),
+            entity=user,
+            description=(
+                "Changement du mot de passe."
+            ),
+            metadata={
+                "username": user.username,
+            },
         )
 
         return Response(

@@ -28,6 +28,10 @@ urlpatterns = [
         include("reports.urls"),
     ),
     path(
+        "api/audit-logs/",
+        include("auditlogs.urls"),
+    ),
+    path(
         "api/",
         include("members.urls"),
     ),

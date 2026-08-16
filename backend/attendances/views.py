@@ -9,6 +9,8 @@ from rest_framework import (
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from auditlogs.models import AuditLog
+from auditlogs.services import create_audit_log
 from members.models import Member
 from members.permissions import IsSuperAdminOrCoordinator
 
@@ -62,8 +64,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         date_to_value = self.request.query_params.get(
             "date_to",
         )
-        attendance_status = self.request.query_params.get(
-            "status",
+        attendance_status = (
+            self.request.query_params.get(
+                "status",
+            )
         )
 
         if member_id:
@@ -72,14 +76,16 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             )
 
         if date_from_value:
-            date_from = parse_date(date_from_value)
+            date_from = parse_date(
+                date_from_value,
+            )
 
             if date_from is None:
                 raise serializers.ValidationError(
                     {
                         "date_from": (
-                            "La date doit utiliser le format "
-                            "AAAA-MM-JJ."
+                            "La date doit utiliser le "
+                            "format AAAA-MM-JJ."
                         ),
                     }
                 )
@@ -89,14 +95,16 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             )
 
         if date_to_value:
-            date_to = parse_date(date_to_value)
+            date_to = parse_date(
+                date_to_value,
+            )
 
             if date_to is None:
                 raise serializers.ValidationError(
                     {
                         "date_to": (
-                            "La date doit utiliser le format "
-                            "AAAA-MM-JJ."
+                            "La date doit utiliser le "
+                            "format AAAA-MM-JJ."
                         ),
                     }
                 )
@@ -117,8 +125,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 {
                     "status": (
-                        "Le statut doit être « present » "
-                        "ou « checked_out »."
+                        "Le statut doit être "
+                        "« present » ou "
+                        "« checked_out »."
                     ),
                 }
             )
@@ -126,8 +135,62 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(
+        attendance = serializer.save(
             recorded_by=self.request.user,
+        )
+
+        create_audit_log(
+            request=self.request,
+            action=AuditLog.Action.CHECK_IN,
+            entity=attendance,
+            description=(
+                "Enregistrement manuel d’une entrée."
+            ),
+            metadata={
+                "member_id": attendance.member_id,
+                "member_name": str(
+                    attendance.member,
+                ),
+                "entry_method": (
+                    attendance.entry_method
+                ),
+                "check_in": attendance.check_in,
+            },
+        )
+
+    def perform_update(self, serializer):
+        previous_check_out = (
+            serializer.instance.check_out
+        )
+        attendance = serializer.save()
+
+        action_value = AuditLog.Action.UPDATE
+        description = (
+            "Modification d’une présence."
+        )
+
+        if (
+            previous_check_out is None
+            and attendance.check_out is not None
+        ):
+            action_value = AuditLog.Action.CHECK_OUT
+            description = (
+                "Enregistrement d’une sortie."
+            )
+
+        create_audit_log(
+            request=self.request,
+            action=action_value,
+            entity=attendance,
+            description=description,
+            metadata={
+                "member_id": attendance.member_id,
+                "check_in": attendance.check_in,
+                "check_out": attendance.check_out,
+                "entry_method": (
+                    attendance.entry_method
+                ),
+            },
         )
 
     @action(
@@ -160,7 +223,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     )
     def summary(self, request):
         today = timezone.localdate()
-        month_start = today.replace(day=1)
+        month_start = today.replace(
+            day=1,
+        )
 
         today_attendances = Attendance.objects.filter(
             check_in__date=today,
@@ -181,6 +246,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 attendance.check_out
                 - attendance.check_in
             )
+
             durations.append(
                 max(
                     duration.total_seconds() / 60,
@@ -280,12 +346,34 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         attendance_serializer.is_valid(
             raise_exception=True,
         )
-        attendance_serializer.save(
+
+        attendance = attendance_serializer.save(
             recorded_by=request.user,
         )
 
+        create_audit_log(
+            request=request,
+            action=AuditLog.Action.CHECK_IN,
+            entity=attendance,
+            description=(
+                "Enregistrement d’une entrée "
+                "par QR code."
+            ),
+            metadata={
+                "member_id": member.id,
+                "member_name": str(member),
+                "entry_method": (
+                    Attendance.EntryMethod.QR_CODE
+                ),
+                "check_in": attendance.check_in,
+            },
+        )
+
         return Response(
-            attendance_serializer.data,
+            AttendanceSerializer(
+                attendance,
+                context=self.get_serializer_context(),
+            ).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -310,10 +398,31 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         attendance.check_out = timezone.now()
         attendance.save(
-            update_fields=("check_out",),
+            update_fields=(
+                "check_out",
+            ),
+        )
+
+        create_audit_log(
+            request=request,
+            action=AuditLog.Action.CHECK_OUT,
+            entity=attendance,
+            description=(
+                "Enregistrement d’une sortie."
+            ),
+            metadata={
+                "member_id": attendance.member_id,
+                "member_name": str(
+                    attendance.member,
+                ),
+                "check_in": attendance.check_in,
+                "check_out": attendance.check_out,
+            },
         )
 
         return Response(
-            self.get_serializer(attendance).data,
+            self.get_serializer(
+                attendance,
+            ).data,
             status=status.HTTP_200_OK,
         )
