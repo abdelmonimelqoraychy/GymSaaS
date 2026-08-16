@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .admin_views import AdminMemberCreateView
 from .alert_views import (
     PaymentAlertsView,
     SubscriptionAlertsView,
@@ -69,6 +70,11 @@ urlpatterns = [
         "me/qr-code/",
         MemberQRCodeView.as_view(),
         name="member-qr-code",
+    ),
+    path(
+        "members/admin-create/",
+        AdminMemberCreateView.as_view(),
+        name="admin-member-create",
     ),
     path(
         "alerts/subscriptions/",

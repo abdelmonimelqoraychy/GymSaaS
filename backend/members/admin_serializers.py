@@ -5,39 +5,18 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import serializers
 
-from members.models import Member
+from accounts.models import User
 
-from .models import User
-
-
-class UserSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = (
-            "id",
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "full_name",
-            "phone",
-            "role",
-            "preferred_language",
-        )
-        read_only_fields = fields
-
-    def get_full_name(self, obj):
-        return (
-            obj.get_full_name()
-            or obj.username
-        )
+from .models import Member
 
 
-class RegistrationSerializer(
-    serializers.ModelSerializer,
+class AdminMemberCreateSerializer(
+    serializers.Serializer,
 ):
+    username = serializers.CharField(
+        max_length=150,
+    )
+    email = serializers.EmailField()
     password = serializers.CharField(
         write_only=True,
         style={
@@ -49,6 +28,24 @@ class RegistrationSerializer(
         style={
             "input_type": "password",
         },
+    )
+    first_name = serializers.CharField(
+        max_length=150,
+    )
+    last_name = serializers.CharField(
+        max_length=150,
+    )
+    phone = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=20,
+    )
+    preferred_language = serializers.ChoiceField(
+        choices=(
+            ("fr", "Français"),
+            ("ar", "Arabe"),
+        ),
+        default="fr",
     )
     birth_date = serializers.DateField(
         required=False,
@@ -63,36 +60,9 @@ class RegistrationSerializer(
         allow_blank=True,
         max_length=20,
     )
-
-    class Meta:
-        model = User
-        fields = (
-            "username",
-            "email",
-            "password",
-            "password_confirm",
-            "first_name",
-            "last_name",
-            "phone",
-            "preferred_language",
-            "birth_date",
-            "address",
-            "emergency_phone",
-        )
-        extra_kwargs = {
-            "email": {
-                "required": True,
-                "allow_blank": False,
-            },
-            "first_name": {
-                "required": True,
-                "allow_blank": False,
-            },
-            "last_name": {
-                "required": True,
-                "allow_blank": False,
-            },
-        }
+    is_active = serializers.BooleanField(
+        default=True,
+    )
 
     def validate_username(self, value):
         value = value.strip()
@@ -165,6 +135,10 @@ class RegistrationSerializer(
         password = validated_data.pop(
             "password",
         )
+        is_active = validated_data.pop(
+            "is_active",
+            True,
+        )
 
         member_data = {
             "birth_date": validated_data.pop(
@@ -179,17 +153,19 @@ class RegistrationSerializer(
                 "emergency_phone",
                 "",
             ),
+            "is_active": is_active,
         }
 
         user = User.objects.create_user(
             password=password,
             role=User.Role.MEMBER,
+            is_active=is_active,
             **validated_data,
         )
 
-        Member.objects.create(
+        member = Member.objects.create(
             user=user,
             **member_data,
         )
 
-        return user
+        return member
