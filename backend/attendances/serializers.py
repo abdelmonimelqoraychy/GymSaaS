@@ -15,6 +15,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
         source="recorded_by.username",
         read_only=True,
     )
+    duration_minutes = serializers.SerializerMethodField()
+    attendance_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Attendance
@@ -24,6 +26,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "member_name",
             "check_in",
             "check_out",
+            "duration_minutes",
+            "attendance_status",
             "entry_method",
             "recorded_by",
             "recorded_by_username",
@@ -32,8 +36,25 @@ class AttendanceSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "check_in",
+            "duration_minutes",
+            "attendance_status",
             "recorded_by",
         )
+
+    def get_duration_minutes(self, obj):
+        end_time = obj.check_out or timezone.now()
+        duration = end_time - obj.check_in
+
+        return max(
+            int(duration.total_seconds() // 60),
+            0,
+        )
+
+    def get_attendance_status(self, obj):
+        if obj.check_out is None:
+            return "present"
+
+        return "checked_out"
 
     def validate(self, attrs):
         if self.instance is None:
@@ -49,19 +70,21 @@ class AttendanceSerializer(serializers.ModelSerializer):
                     }
                 )
 
-            has_active_subscription = Subscription.objects.filter(
-                member=member,
-                start_date__lte=today,
-                end_date__gte=today,
-                is_suspended=False,
-            ).exists()
+            has_active_subscription = (
+                Subscription.objects.filter(
+                    member=member,
+                    start_date__lte=today,
+                    end_date__gte=today,
+                    is_suspended=False,
+                ).exists()
+            )
 
             if not has_active_subscription:
                 raise serializers.ValidationError(
                     {
                         "member": (
                             "Ce membre ne possède pas "
-                            "d'abonnement actif."
+                            "d’abonnement actif."
                         ),
                     }
                 )
@@ -86,7 +109,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
                     {
                         "check_out": (
                             "La sortie ne peut pas être "
-                            "enregistrée lors de l'entrée."
+                            "enregistrée lors de l’entrée."
                         ),
                     }
                 )
@@ -101,12 +124,14 @@ class AttendanceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "check_out": (
-                        "L'heure de sortie doit être "
-                        "postérieure à l'heure d'entrée."
+                        "L’heure de sortie doit être "
+                        "postérieure à l’heure d’entrée."
                     ),
                 }
             )
 
         return attrs
+
+
 class QRCodeCheckInSerializer(serializers.Serializer):
     qr_code = serializers.UUIDField()
