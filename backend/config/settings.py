@@ -4,7 +4,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Conservez ici votre clé secrète Django actuelle.
+# Cette clé devra être placée dans une variable
+# d’environnement avant le déploiement.
 SECRET_KEY = "COLLEZ_ICI_VOTRE_SECRET_KEY_ACTUELLE"
 
 DEBUG = True
@@ -16,6 +17,7 @@ ALLOWED_HOSTS = [
 
 
 INSTALLED_APPS = [
+    # Applications Django
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -23,15 +25,19 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    # Applications externes
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+
+    # Applications du projet
     "accounts",
     "gyms",
     "members",
     "contacts",
     "dashboard",
     "attendances",
+    "reports",
 ]
 
 
@@ -52,14 +58,26 @@ ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "BACKEND": (
+            "django.template.backends.django."
+            "DjangoTemplates"
+        ),
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+                (
+                    "django.template.context_processors."
+                    "request"
+                ),
+                (
+                    "django.contrib.auth."
+                    "context_processors.auth"
+                ),
+                (
+                    "django.contrib.messages."
+                    "context_processors.messages"
+                ),
             ],
         },
     },
@@ -125,20 +143,31 @@ AUTH_USER_MODEL = "accounts.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        (
+            "rest_framework.authentication."
+            "TokenAuthentication"
+        ),
+        (
+            "rest_framework.authentication."
+            "SessionAuthentication"
+        ),
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        (
+            "rest_framework.permissions."
+            "IsAuthenticated"
+        ),
     ],
 }
+
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
 
 LOGIN_REDIRECT_URL = "/api/"
 
