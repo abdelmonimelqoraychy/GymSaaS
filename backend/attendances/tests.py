@@ -1,7 +1,9 @@
 import uuid
+from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -51,16 +53,30 @@ class AttendanceAPITests(APITestCase):
                 role=User.Role.MEMBER,
             )
         )
-        self.member_without_subscription = Member.objects.create(
-            user=self.member_without_subscription_user,
+        self.member_without_subscription = (
+            Member.objects.create(
+                user=(
+                    self.member_without_subscription_user
+                ),
+            )
         )
 
-        self.list_url = reverse("attendance-list")
+        self.list_url = reverse(
+            "attendance-list",
+        )
         self.qr_checkin_url = reverse(
             "attendance-qr-checkin",
         )
+        self.currently_present_url = reverse(
+            "attendance-currently-present",
+        )
+        self.summary_url = reverse(
+            "attendance-summary",
+        )
 
-    def test_anonymous_user_cannot_access_attendances(self):
+    def test_anonymous_user_cannot_access_attendances(
+        self,
+    ):
         response = self.client.get(
             self.list_url,
         )
@@ -293,7 +309,9 @@ class AttendanceAPITests(APITestCase):
             self.coordinator,
         )
 
-    def test_invalid_qr_code_format_is_rejected(self):
+    def test_invalid_qr_code_format_is_rejected(
+        self,
+    ):
         self.client.force_authenticate(
             user=self.coordinator,
         )
@@ -345,4 +363,309 @@ class AttendanceAPITests(APITestCase):
         self.assertEqual(
             Attendance.objects.count(),
             0,
+        )
+
+    def test_attendance_returns_duration_and_status(
+        self,
+    ):
+        now = timezone.now()
+
+        attendance = Attendance.objects.create(
+            member=self.member,
+            recorded_by=self.coordinator,
+        )
+        Attendance.objects.filter(
+            pk=attendance.pk,
+        ).update(
+            check_in=now - timedelta(minutes=30),
+            check_out=now,
+        )
+
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            reverse(
+                "attendance-detail",
+                kwargs={
+                    "pk": attendance.id,
+                },
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["duration_minutes"],
+            30,
+        )
+        self.assertEqual(
+            response.data["attendance_status"],
+            "checked_out",
+        )
+
+    def test_attendances_can_be_filtered_by_member(
+        self,
+    ):
+        own_attendance = Attendance.objects.create(
+            member=self.member,
+            recorded_by=self.coordinator,
+        )
+        Attendance.objects.create(
+            member=self.member_without_subscription,
+            recorded_by=self.coordinator,
+        )
+
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "member": self.member.id,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+        self.assertEqual(
+            response.data[0]["id"],
+            own_attendance.id,
+        )
+
+    def test_attendances_can_be_filtered_by_status(
+        self,
+    ):
+        open_attendance = Attendance.objects.create(
+            member=self.member,
+            recorded_by=self.coordinator,
+        )
+        Attendance.objects.create(
+            member=self.member_without_subscription,
+            recorded_by=self.coordinator,
+            check_out=timezone.now(),
+        )
+
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "status": "present",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+        self.assertEqual(
+            response.data[0]["id"],
+            open_attendance.id,
+        )
+
+    def test_attendances_can_be_filtered_by_date(
+        self,
+    ):
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+
+        today_attendance = Attendance.objects.create(
+            member=self.member,
+            recorded_by=self.coordinator,
+        )
+        yesterday_attendance = Attendance.objects.create(
+            member=self.member_without_subscription,
+            recorded_by=self.coordinator,
+        )
+
+        Attendance.objects.filter(
+            pk=yesterday_attendance.pk,
+        ).update(
+            check_in=timezone.now() - timedelta(days=1),
+        )
+
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "date_from": str(today),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+        self.assertEqual(
+            response.data[0]["id"],
+            today_attendance.id,
+        )
+        self.assertNotEqual(
+            response.data[0]["id"],
+            yesterday_attendance.id,
+        )
+        self.assertNotEqual(
+            today,
+            yesterday,
+        )
+
+    def test_invalid_date_filter_is_rejected(self):
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.list_url,
+            {
+                "date_from": "date-invalide",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "date_from",
+            response.data,
+        )
+
+    def test_coordinator_can_list_currently_present(
+        self,
+    ):
+        open_attendance = Attendance.objects.create(
+            member=self.member,
+            recorded_by=self.coordinator,
+        )
+        Attendance.objects.create(
+            member=self.member_without_subscription,
+            recorded_by=self.coordinator,
+            check_out=timezone.now(),
+        )
+
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.currently_present_url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+        self.assertEqual(
+            len(response.data["attendances"]),
+            1,
+        )
+        self.assertEqual(
+            response.data["attendances"][0]["id"],
+            open_attendance.id,
+        )
+
+    def test_summary_returns_attendance_statistics(
+        self,
+    ):
+        now = timezone.now()
+
+        completed_attendance = Attendance.objects.create(
+            member=self.member,
+            recorded_by=self.coordinator,
+        )
+        Attendance.objects.filter(
+            pk=completed_attendance.pk,
+        ).update(
+            check_in=now - timedelta(minutes=30),
+            check_out=now,
+        )
+
+        Attendance.objects.create(
+            member=self.member_without_subscription,
+            recorded_by=self.coordinator,
+        )
+
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.summary_url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["today"]["total_check_ins"],
+            2,
+        )
+        self.assertEqual(
+            response.data["today"]["currently_present"],
+            1,
+        )
+        self.assertEqual(
+            response.data["today"]["checked_out"],
+            1,
+        )
+        self.assertEqual(
+            response.data["today"]["unique_members"],
+            2,
+        )
+        self.assertEqual(
+            response.data["today"][
+                "average_duration_minutes"
+            ],
+            30.0,
+        )
+        self.assertEqual(
+            response.data["current_month"][
+                "total_check_ins"
+            ],
+            2,
+        )
+
+    def test_member_cannot_access_attendance_summary(
+        self,
+    ):
+        self.client.force_authenticate(
+            user=self.member_user,
+        )
+
+        response = self.client.get(
+            self.summary_url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
         )
