@@ -3,40 +3,38 @@ import heroImage from "../assets/hero.png";
 
 function Hero() {
   return (
-    <section className="home-hero">
-      <div className="hero-copy">
-        <span className="eyebrow">GESTION DE SALLE DE SPORT</span>
+    <section className="fitness-hero">
+      <div className="fitness-hero-media">
+        <img src={heroImage} alt="Entraînement dans une salle de sport" />
+        <div className="fitness-hero-shade" />
+      </div>
 
+      <div className="fitness-hero-content">
+        <span className="eyebrow">GYMSAAS FITNESS CLUB</span>
         <h1>
-          Gérez votre salle.
-          <span> Développez votre communauté.</span>
+          Bougez fort.
+          <span> Progressez ensemble.</span>
         </h1>
-
         <p>
-          Centralisez vos membres, abonnements et paiements dans une seule
-          plateforme simple et moderne.
+          Une expérience fitness moderne avec un espace adhérent pour suivre
+          votre abonnement, vos paiements et vos passages au club.
         </p>
 
         <div className="hero-actions">
-          <Link className="btn btn-primary btn-large" to="/login">
-            Accéder à l'espace de gestion
+          <Link className="btn btn-primary btn-large" to="/register">
+            Rejoindre le club
           </Link>
-
-          <a className="btn btn-secondary btn-large" href="#services">
-            Découvrir
-          </a>
+          <Link className="btn btn-secondary btn-large" to="/login">
+            Espace client
+          </Link>
         </div>
       </div>
 
-      <div className="hero-visual">
-        <div className="hero-image-frame">
-          <img src={heroImage} alt="Salle de sport GymSaaS" />
-        </div>
-
-        <div className="hero-floating-card">
-          <strong>Tout au même endroit</strong>
-          <span>Membres • Abonnements • Paiements</span>
-        </div>
+      <div className="hero-bottom-line">
+        <span>Musculation</span>
+        <span>Cardio</span>
+        <span>Cross training</span>
+        <span>Suivi digital</span>
       </div>
     </section>
   );

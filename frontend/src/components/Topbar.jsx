@@ -39,13 +39,7 @@ function Topbar() {
 
         <div className="topbar-user-text">
           <strong>{displayName}</strong>
-          <span>
-            {user?.role === "SUPER_ADMIN"
-              ? "Administrateur"
-              : user?.role === "COORDINATOR"
-                ? "Coordinateur"
-                : "Utilisateur"}
-          </span>
+          <span>{user?.is_superuser || user?.role === "ADMIN" ? "Administrateur" : "Utilisateur"}</span>
         </div>
       </div>
     </header>

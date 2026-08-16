@@ -10,9 +10,7 @@ export function getToken() {
 export function getStoredUser() {
   const raw = localStorage.getItem(USER_KEY);
 
-  if (!raw) {
-    return null;
-  }
+  if (!raw) return null;
 
   try {
     return JSON.parse(raw);
@@ -38,6 +36,12 @@ export async function login(username, password) {
     password,
   });
 
+  saveSession(response.data.token, response.data.user);
+  return response.data.user;
+}
+
+export async function register(payload) {
+  const response = await api.post("/auth/register/", payload);
   saveSession(response.data.token, response.data.user);
   return response.data.user;
 }
