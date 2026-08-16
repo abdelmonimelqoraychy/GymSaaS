@@ -4,7 +4,7 @@ import "../styles/dashboard-shell.css";
 
 const links = [
   ["/dashboard", "Dashboard", "home"],
-  ["/members", "Membres", "users"],
+  ["/members", "Clients", "users"],
   ["/plans", "Formules", "plan"],
   ["/subscriptions", "Abonnements", "calendar"],
   ["/payments", "Paiements", "payment"],
@@ -22,7 +22,7 @@ function Sidebar() {
     } finally {
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");
-      navigate("/login", { replace: true });
+      navigate("/admin-login", { replace: true });
     }
   }
 

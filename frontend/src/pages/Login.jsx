@@ -1,28 +1,20 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-import api from "../services/api";
+import { clearSession, login } from "../services/auth";
+import { isAdmin } from "../services/roles";
 import heroImage from "../assets/hero.png";
 import "../styles/login.css";
 
 function Login() {
   const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
-
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setForm((current) => ({ ...current, [name]: value }));
   }
 
   async function handleSubmit(event) {
@@ -31,24 +23,20 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await api.post("/auth/login/", {
-        username: form.username.trim(),
-        password: form.password,
-      });
+      const user = await login(form.username.trim(), form.password);
 
-      localStorage.setItem("authToken", response.data.token);
-      localStorage.setItem(
-        "authUser",
-        JSON.stringify(response.data.user)
-      );
+      if (isAdmin(user)) {
+        clearSession();
+        setError("Ce compte est administrateur. Utilisez l’accès Admin.");
+        return;
+      }
 
-      navigate("/dashboard", { replace: true });
+      navigate("/client", { replace: true });
     } catch (requestError) {
-      const message =
+      setError(
         requestError.response?.data?.detail ||
-        "Impossible de se connecter au serveur.";
-
-      setError(message);
+          "Impossible de se connecter au serveur."
+      );
     } finally {
       setLoading(false);
     }
@@ -66,11 +54,11 @@ function Login() {
           </Link>
 
           <div>
-            <span className="eyebrow">ESPACE DE GESTION</span>
-            <h1>Votre salle. Vos membres. Une seule plateforme.</h1>
+            <span className="eyebrow">ESPACE ADHÉRENT</span>
+            <h1>Votre progression. Votre abonnement. Votre espace.</h1>
             <p>
-              Retrouvez vos abonnements et paiements depuis votre espace
-              sécurisé.
+              Consultez votre abonnement, vos paiements, vos présences et votre
+              code d’accès depuis un seul espace.
             </p>
           </div>
         </div>
@@ -82,11 +70,9 @@ function Login() {
             GYM<span>SAAS</span>
           </Link>
 
-          <span className="eyebrow">BIENVENUE</span>
+          <span className="eyebrow">ESPACE CLIENT</span>
           <h2>Connexion</h2>
-          <p className="muted">
-            Connectez-vous avec votre compte Django.
-          </p>
+          <p className="muted">Connectez-vous à votre espace adhérent.</p>
 
           {error && <div className="form-error">{error}</div>}
 
@@ -120,6 +106,10 @@ function Login() {
           >
             {loading ? "Connexion..." : "Se connecter"}
           </button>
+
+          <p className="auth-switch">
+            Pas encore membre ? <Link to="/register">Créer un compte</Link>
+          </p>
 
           <Link className="back-home" to="/">
             ← Retour à l'accueil

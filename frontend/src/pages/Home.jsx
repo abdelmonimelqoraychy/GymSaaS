@@ -1,38 +1,61 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import FeatureCard from "../components/FeatureCard";
 import Footer from "../components/Footer";
-
+import api, { extractList } from "../services/api";
 import "../styles/home.css";
 
-const features = [
-  {
-    number: "01",
-    title: "Gestion des membres",
-    description:
-      "Consultez les adhérents et retrouvez rapidement leurs informations.",
-  },
-  {
-    number: "02",
-    title: "Abonnements",
-    description:
-      "Suivez les formules, dates de début, dates de fin et statuts.",
-  },
-  {
-    number: "03",
-    title: "Paiements",
-    description:
-      "Centralisez les règlements et gardez une vue claire sur les paiements.",
-  },
-  {
-    number: "04",
-    title: "Tableau de bord",
-    description:
-      "Visualisez les informations essentielles depuis un espace unique.",
-  },
+const activities = [
+  ["01", "Musculation", "Renforcement, progression et entraînement libre dans un environnement motivant."],
+  ["02", "Cardio", "Travaillez endurance et condition physique avec des séances adaptées à votre rythme."],
+  ["03", "Cross training", "Des entraînements complets, dynamiques et variés pour repousser vos limites."],
+  ["04", "Suivi digital", "Votre abonnement, vos paiements, vos présences et votre accès réunis dans votre espace."],
+];
+
+const advantages = [
+  "Un espace adhérent accessible à tout moment",
+  "Suivi simple de votre abonnement",
+  "Historique de paiements et de présences",
+  "Identifiant QR personnel pour l’accès",
 ];
 
 function Home() {
+  const [plans, setPlans] = useState([]);
+  const [contact, setContact] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    subject: "Demande d'information",
+    message: "",
+  });
+  const [contactState, setContactState] = useState({ loading: false, message: "", error: false });
+
+  useEffect(() => {
+    api.get("/plans/")
+      .then((response) => setPlans(extractList(response).filter((plan) => plan.is_active)))
+      .catch(() => setPlans([]));
+  }, []);
+
+  function handleContactChange(event) {
+    const { name, value } = event.target;
+    setContact((current) => ({ ...current, [name]: value }));
+  }
+
+  async function handleContactSubmit(event) {
+    event.preventDefault();
+    setContactState({ loading: true, message: "", error: false });
+
+    try {
+      await api.post("/contacts/", contact);
+      setContact({ full_name: "", email: "", phone: "", subject: "Demande d'information", message: "" });
+      setContactState({ loading: false, message: "Votre message a bien été envoyé.", error: false });
+    } catch {
+      setContactState({ loading: false, message: "Impossible d’envoyer le message pour le moment.", error: true });
+    }
+  }
+
   return (
     <div className="public-site">
       <Navbar />
@@ -40,79 +63,115 @@ function Home() {
       <main>
         <Hero />
 
-        <section className="home-section" id="services">
-          <div className="section-heading">
-            <span className="eyebrow">NOS SERVICES</span>
-            <h2>Une gestion simple pour votre activité</h2>
+        <section className="public-section" id="activities">
+          <div className="section-kicker">BOUGEZ À VOTRE FAÇON</div>
+          <div className="section-intro-row">
+            <h2>Des activités pour chaque objectif.</h2>
             <p>
-              GymSaaS regroupe les fonctions principales dont une salle a
-              besoin pour suivre son activité.
+              Une ambiance sportive forte et un parcours digital simple avant,
+              pendant et après vos séances.
             </p>
           </div>
 
-          <div className="feature-grid">
-            {features.map((feature) => (
-              <FeatureCard key={feature.number} {...feature} />
+          <div className="activity-grid">
+            {activities.map(([number, title, description]) => (
+              <article className="activity-card" key={number}>
+                <span>{number}</span>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
             ))}
           </div>
         </section>
 
-        <section className="management-section" id="gestion">
-          <div className="management-copy">
-            <span className="eyebrow">VOTRE ESPACE DE GESTION</span>
-            <h2>Concentrez-vous sur votre salle, pas sur les fichiers.</h2>
+        <section className="public-section advantages-section" id="advantages">
+          <div className="advantages-copy">
+            <span className="eyebrow">PLUS QU’UNE SALLE</span>
+            <h2>Votre expérience fitness continue aussi en ligne.</h2>
             <p>
-              Utilisez un tableau de bord centralisé pour consulter vos
-              membres, formules, abonnements et paiements.
+              GymSaaS donne à chaque adhérent son propre espace pour rester
+              informé et autonome.
             </p>
+            <Link className="btn btn-primary btn-large" to="/register">
+              Créer mon espace
+            </Link>
           </div>
 
-          <div className="management-panel">
-            <div className="mini-sidebar">
-              <strong>GYMSAAS</strong>
-              <span className="active">Dashboard</span>
-              <span>Membres</span>
-              <span>Formules</span>
-              <span>Abonnements</span>
-              <span>Paiements</span>
-            </div>
-
-            <div className="mini-dashboard">
-              <div className="mini-title">Tableau de bord</div>
-
-              <div className="mini-stats">
-                <div>
-                  <small>Membres</small>
-                  <strong>Données Django</strong>
-                </div>
-                <div>
-                  <small>Abonnements</small>
-                  <strong>Suivi en temps réel</strong>
-                </div>
-                <div>
-                  <small>Paiements</small>
-                  <strong>Gestion centralisée</strong>
-                </div>
+          <div className="advantages-list">
+            {advantages.map((item, index) => (
+              <div className="advantage-line" key={item}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{item}</strong>
               </div>
-
-              <div className="mini-chart">
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
-        <section className="home-cta">
-          <span className="eyebrow">PRÊT À COMMENCER ?</span>
-          <h2>Accédez à votre espace GymSaaS.</h2>
-          <a className="btn btn-primary btn-large" href="/login">
-            Se connecter
-          </a>
+        <section className="public-section" id="plans">
+          <div className="section-kicker">NOS FORMULES</div>
+          <div className="section-intro-row">
+            <h2>Choisissez votre rythme.</h2>
+            <p>Les formules ci-dessous viennent directement de Django.</p>
+          </div>
+
+          <div className="public-plan-grid">
+            {plans.length === 0 ? (
+              <div className="public-empty">Aucune formule active pour le moment.</div>
+            ) : (
+              plans.slice(0, 4).map((plan, index) => (
+                <article className={`public-plan-card ${index === 1 ? "featured" : ""}`} key={plan.id}>
+                  <span className="plan-number">0{index + 1}</span>
+                  <h3>{plan.name}</h3>
+                  <div className="plan-price">
+                    <strong>{Number(plan.price).toLocaleString("fr-FR")}</strong>
+                    <span>DH</span>
+                  </div>
+                  <p>{plan.description || `${plan.duration_days} jours d'accès.`}</p>
+                  <small>{plan.duration_days} jours</small>
+                  <Link className="btn btn-secondary" to="/register">Je m'inscris</Link>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="public-section public-join">
+          <div>
+            <span className="eyebrow">VOTRE ESPACE ADHÉRENT</span>
+            <h2>Tout ce qui vous concerne. Sans chercher.</h2>
+          </div>
+          <div className="join-preview">
+            <div><span>Abonnement</span><strong>Actif</strong></div>
+            <div><span>Paiements</span><strong>Historique</strong></div>
+            <div><span>Présences</span><strong>Suivi</strong></div>
+            <div><span>Accès</span><strong>QR personnel</strong></div>
+          </div>
+          <div className="join-actions">
+            <Link className="btn btn-primary btn-large" to="/register">Créer un compte</Link>
+            <Link className="btn btn-secondary btn-large" to="/login">Se connecter</Link>
+          </div>
+        </section>
+
+        <section className="public-section contact-section" id="contact">
+          <div className="contact-copy">
+            <span className="eyebrow">CONTACT</span>
+            <h2>Une question avant de commencer ?</h2>
+            <p>Envoyez-nous un message. L’équipe pourra vous répondre rapidement.</p>
+          </div>
+
+          <form className="contact-form" onSubmit={handleContactSubmit}>
+            <input name="full_name" value={contact.full_name} onChange={handleContactChange} placeholder="Nom complet" required />
+            <input name="email" type="email" value={contact.email} onChange={handleContactChange} placeholder="E-mail" required />
+            <input name="phone" value={contact.phone} onChange={handleContactChange} placeholder="Téléphone" />
+            <input name="subject" value={contact.subject} onChange={handleContactChange} placeholder="Sujet" required />
+            <textarea name="message" value={contact.message} onChange={handleContactChange} placeholder="Votre message" rows="5" required />
+            {contactState.message && (
+              <div className={contactState.error ? "contact-status error" : "contact-status success"}>{contactState.message}</div>
+            )}
+            <button className="btn btn-primary btn-large" disabled={contactState.loading}>
+              {contactState.loading ? "Envoi..." : "Envoyer"}
+            </button>
+          </form>
         </section>
       </main>
 
