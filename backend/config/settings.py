@@ -1,19 +1,71 @@
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent
+
+# Charge le fichier gymsaas/.env s'il existe.
+# Les variables système restent prioritaires.
+load_dotenv(PROJECT_ROOT / ".env")
 
 
-# Cette clé devra être placée dans une variable
-# d’environnement avant le déploiement.
-SECRET_KEY = "COLLEZ_ICI_VOTRE_SECRET_KEY_ACTUELLE"
+def get_env_bool(name, default=False):
+    value = os.getenv(name)
 
-DEBUG = True
+    if value is None:
+        return default
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-]
+    normalized_value = value.strip().lower()
+
+    if normalized_value in ("1", "true", "yes", "on"):
+        return True
+
+    if normalized_value in ("0", "false", "no", "off"):
+        return False
+
+    raise ImproperlyConfigured(
+        f"La variable {name} doit être une valeur booléenne."
+    )
+
+
+def get_env_list(name, default=""):
+    value = os.getenv(name, default)
+
+    return [
+        item.strip()
+        for item in value.split(",")
+        if item.strip()
+    ]
+
+
+DEVELOPMENT_SECRET_KEY = (
+    "django-insecure-development-only-change-this-key"
+)
+
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    DEVELOPMENT_SECRET_KEY,
+)
+
+DEBUG = get_env_bool(
+    "DJANGO_DEBUG",
+    True,
+)
+
+if not DEBUG and SECRET_KEY == DEVELOPMENT_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "DJANGO_SECRET_KEY doit être définie en production."
+    )
+
+
+ALLOWED_HOSTS = get_env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost",
+)
 
 
 INSTALLED_APPS = [
@@ -88,12 +140,71 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+DATABASE_ENGINE = os.getenv(
+    "DB_ENGINE",
+    "sqlite",
+).strip().lower()
+
+
+if DATABASE_ENGINE == "sqlite":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+
+elif DATABASE_ENGINE in (
+    "postgres",
+    "postgresql",
+):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv(
+                "DB_NAME",
+                "gymsaas",
+            ),
+            "USER": os.getenv(
+                "DB_USER",
+                "gymsaas",
+            ),
+            "PASSWORD": os.getenv(
+                "DB_PASSWORD",
+                "",
+            ),
+            "HOST": os.getenv(
+                "DB_HOST",
+                "127.0.0.1",
+            ),
+            "PORT": os.getenv(
+                "DB_PORT",
+                "5432",
+            ),
+            "CONN_MAX_AGE": int(
+                os.getenv(
+                    "DB_CONN_MAX_AGE",
+                    "60",
+                )
+            ),
+            "CONN_HEALTH_CHECKS": True,
+        }
+    }
+
+    database_sslmode = os.getenv(
+        "DB_SSLMODE",
+        "",
+    ).strip()
+
+    if database_sslmode:
+        DATABASES["default"]["OPTIONS"] = {
+            "sslmode": database_sslmode,
+        }
+
+else:
+    raise ImproperlyConfigured(
+        "DB_ENGINE doit être 'sqlite' ou 'postgresql'."
+    )
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -134,6 +245,10 @@ USE_TZ = True
 
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -162,12 +277,26 @@ REST_FRAMEWORK = {
 }
 
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOWED_ORIGINS = get_env_list(
+    "CORS_ALLOWED_ORIGINS",
+    (
+        "http://localhost:3000,"
+        "http://127.0.0.1:3000,"
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173"
+    ),
+)
+
+
+CSRF_TRUSTED_ORIGINS = get_env_list(
+    "CSRF_TRUSTED_ORIGINS",
+    (
+        "http://localhost:3000,"
+        "http://127.0.0.1:3000,"
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173"
+    ),
+)
 
 
 LOGIN_REDIRECT_URL = "/api/"
