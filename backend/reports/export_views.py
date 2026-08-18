@@ -37,6 +37,15 @@ def parse_date_parameter(
     return parsed_date
 
 
+def format_date(value):
+    if value is None:
+        return ""
+
+    return value.strftime(
+        "%d/%m/%Y",
+    )
+
+
 def format_datetime(value):
     if value is None:
         return ""
@@ -45,7 +54,60 @@ def format_datetime(value):
         value = timezone.localtime(value)
 
     return value.strftime(
-        "%Y-%m-%d %H:%M:%S",
+        "%d/%m/%Y %H:%M",
+    )
+
+
+def format_money(value):
+    if value is None:
+        return ""
+
+    return f"{value:.2f}".replace(
+        ".",
+        ",",
+    )
+
+
+def protect_csv_value(value):
+    if value is None:
+        return ""
+
+    text = str(value)
+
+    if text.lstrip().startswith(
+        ("=", "+", "-", "@"),
+    ):
+        return f"'{text}"
+
+    return text
+
+
+def write_csv_row(writer, values):
+    writer.writerow(
+        [
+            protect_csv_value(value)
+            for value in values
+        ]
+    )
+
+
+def create_csv_response(filename):
+    response = HttpResponse(
+        content_type="text/csv; charset=utf-8",
+    )
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename="{filename}"'
+    response.write("\ufeff")
+
+    return response
+
+
+def create_csv_writer(response):
+    return csv.writer(
+        response,
+        delimiter=";",
+        lineterminator="\r\n",
     )
 
 
@@ -61,18 +123,13 @@ class MembersCSVExportView(APIView):
             "user__username",
         )
 
-        response = HttpResponse(
-            content_type="text/csv; charset=utf-8",
+        response = create_csv_response(
+            "membres.csv",
         )
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="membres.csv"'
+        writer = create_csv_writer(response)
 
-        response.write("\ufeff")
-
-        writer = csv.writer(response)
-
-        writer.writerow(
+        write_csv_row(
+            writer,
             [
                 "ID",
                 "Nom d’utilisateur",
@@ -89,7 +146,8 @@ class MembersCSVExportView(APIView):
         )
 
         for member in members:
-            writer.writerow(
+            write_csv_row(
+                writer,
                 [
                     member.id,
                     member.user.username,
@@ -99,7 +157,9 @@ class MembersCSVExportView(APIView):
                     ),
                     member.user.email,
                     member.user.phone,
-                    member.birth_date or "",
+                    format_date(
+                        member.birth_date,
+                    ),
                     member.address,
                     member.emergency_phone,
                     format_datetime(
@@ -163,23 +223,18 @@ class PaymentsCSVExportView(APIView):
                 paid_at__date__lte=end_date,
             )
 
-        response = HttpResponse(
-            content_type="text/csv; charset=utf-8",
+        response = create_csv_response(
+            "paiements.csv",
         )
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="paiements.csv"'
+        writer = create_csv_writer(response)
 
-        response.write("\ufeff")
-
-        writer = csv.writer(response)
-
-        writer.writerow(
+        write_csv_row(
+            writer,
             [
                 "ID",
                 "Membre",
                 "Formule",
-                "Montant",
+                "Montant (DH)",
                 "Méthode",
                 "Date du paiement",
                 "Référence",
@@ -188,7 +243,8 @@ class PaymentsCSVExportView(APIView):
         )
 
         for payment in payments:
-            writer.writerow(
+            write_csv_row(
+                writer,
                 [
                     payment.id,
                     (
@@ -198,7 +254,9 @@ class PaymentsCSVExportView(APIView):
                         .username
                     ),
                     payment.subscription.plan.name,
-                    str(payment.amount),
+                    format_money(
+                        payment.amount,
+                    ),
                     payment.get_method_display(),
                     format_datetime(
                         payment.paid_at,
@@ -257,18 +315,13 @@ class AttendancesCSVExportView(APIView):
                 check_in__date__lte=end_date,
             )
 
-        response = HttpResponse(
-            content_type="text/csv; charset=utf-8",
+        response = create_csv_response(
+            "presences.csv",
         )
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="presences.csv"'
+        writer = create_csv_writer(response)
 
-        response.write("\ufeff")
-
-        writer = csv.writer(response)
-
-        writer.writerow(
+        write_csv_row(
+            writer,
             [
                 "ID",
                 "Membre",
@@ -298,7 +351,8 @@ class AttendancesCSVExportView(APIView):
                 0,
             )
 
-            writer.writerow(
+            write_csv_row(
+                writer,
                 [
                     attendance.id,
                     (

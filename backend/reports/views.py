@@ -125,7 +125,10 @@ class FinancialReportView(APIView):
             )
 
             remaining_amount = max(
-                subscription.plan.price - total_paid,
+                (
+                    subscription.price_at_subscription
+                    - total_paid
+                ),
                 Decimal("0.00"),
             )
 
@@ -148,7 +151,7 @@ class FinancialReportView(APIView):
                             subscription.plan.name
                         ),
                         "plan_price": (
-                            subscription.plan.price
+                            subscription.price_at_subscription
                         ),
                         "total_paid": total_paid,
                         "remaining_amount": (

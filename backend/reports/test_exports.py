@@ -1,4 +1,6 @@
 from datetime import timedelta
+import csv
+import io
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -91,6 +93,16 @@ class CSVExportsAPITests(APITestCase):
             "utf-8-sig",
         )
 
+    def read_csv(self, response):
+        return list(
+            csv.reader(
+                io.StringIO(
+                    self.decode_csv(response),
+                ),
+                delimiter=";",
+            )
+        )
+
     def test_anonymous_user_cannot_export_csv(self):
         protected_urls = (
             self.members_url,
@@ -167,6 +179,17 @@ class CSVExportsAPITests(APITestCase):
             content,
         )
 
+        rows = self.read_csv(response)
+
+        self.assertEqual(
+            rows[0][1],
+            "Nom d’utilisateur",
+        )
+        self.assertEqual(
+            len(rows[0]),
+            11,
+        )
+
     def test_coordinator_can_export_payments(self):
         self.client.force_authenticate(
             user=self.coordinator,
@@ -191,6 +214,35 @@ class CSVExportsAPITests(APITestCase):
         )
         self.assertIn(
             "Formule Export",
+            content,
+        )
+        self.assertIn(
+            "100,00",
+            content,
+        )
+        self.assertIn(
+            "Montant (DH)",
+            content,
+        )
+
+    def test_csv_protects_formula_like_values(self):
+        self.member.address = "=2+2"
+        self.member.save(
+            update_fields=(
+                "address",
+            ),
+        )
+        self.client.force_authenticate(
+            user=self.coordinator,
+        )
+
+        response = self.client.get(
+            self.members_url,
+        )
+        content = self.decode_csv(response)
+
+        self.assertIn(
+            "'=2+2",
             content,
         )
 

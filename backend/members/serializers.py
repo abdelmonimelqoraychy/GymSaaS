@@ -111,10 +111,7 @@ class MemberSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    member_name = serializers.CharField(
-        source="member.user.get_full_name",
-        read_only=True,
-    )
+    member_name = serializers.SerializerMethodField()
     plan_name = serializers.CharField(
         source="plan.name",
         read_only=True,
@@ -138,6 +135,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "member_name",
             "plan",
             "plan_name",
+            "price_at_subscription",
             "start_date",
             "end_date",
             "days_remaining",
@@ -148,11 +146,18 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
+            "price_at_subscription",
             "end_date",
             "days_remaining",
             "status",
             "status_display",
             "created_at",
+        )
+
+    def get_member_name(self, obj):
+        return (
+            obj.member.user.get_full_name()
+            or obj.member.user.username
         )
 
     def validate(self, attrs):
@@ -299,7 +304,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
             if (
                 already_paid + amount
-                > subscription.plan.price
+                > subscription.price_at_subscription
             ):
                 errors["amount"] = (
                     "Le total des paiements ne peut pas "
@@ -322,7 +327,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         )
 
         remaining = (
-            obj.subscription.plan.price
+            obj.subscription.price_at_subscription
             - total_paid
         )
 

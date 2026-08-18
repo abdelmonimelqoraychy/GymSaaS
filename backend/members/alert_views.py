@@ -176,7 +176,10 @@ class PaymentAlertsView(APIView):
             )
             .annotate(
                 remaining_amount=ExpressionWrapper(
-                    F("plan__price") - F("total_paid"),
+                    (
+                        F("price_at_subscription")
+                        - F("total_paid")
+                    ),
                     output_field=money_field,
                 ),
             )
@@ -201,7 +204,9 @@ class PaymentAlertsView(APIView):
                     ),
                     "plan_id": subscription.plan_id,
                     "plan_name": subscription.plan.name,
-                    "plan_price": subscription.plan.price,
+                    "plan_price": (
+                        subscription.price_at_subscription
+                    ),
                     "total_paid": subscription.total_paid,
                     "remaining_amount": (
                         subscription.remaining_amount
