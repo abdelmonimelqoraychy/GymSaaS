@@ -1,9 +1,9 @@
 import { Link } from "react-router";
 
-import { getStoredUser } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
 
 function ClientTopbar() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const name = user?.full_name || user?.username || "Adhérent";
   const initials = name
     .split(" ")

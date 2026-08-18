@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router";
 
-import { logout } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
 
 const links = [
   ["/client", "Mon espace", "home"],
@@ -13,6 +13,7 @@ const links = [
 
 function ClientSidebar() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   async function handleLogout() {
     await logout();

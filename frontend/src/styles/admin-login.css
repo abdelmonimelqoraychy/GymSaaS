@@ -44,3 +44,10 @@
 .admin-login-card input:focus { border-color: #ff5a1f; }
 .admin-login-card .btn { width: 100%; margin-top: 7px; }
 .admin-back { margin-top: 5px; color: #747e89; text-align: center; font-size: 12px; }
+
+@media (max-width: 560px) {
+  .admin-login-page { padding: 84px 16px 24px; align-items: start; }
+  .admin-login-brand { top: 24px; left: 18px; }
+  .admin-login-card { padding: 26px 20px; border-radius: 16px; }
+  .admin-login-card h1 { font-size: 31px; }
+}

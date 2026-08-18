@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
-import { register } from "../services/auth";
+import { useAuth } from "../context/AuthContext";
 import "../styles/register.css";
 
 const initialForm = {
@@ -17,6 +17,7 @@ const initialForm = {
 
 function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);

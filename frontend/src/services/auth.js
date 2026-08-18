@@ -9,7 +9,6 @@ export function getToken() {
 
 export function getStoredUser() {
   const raw = localStorage.getItem(USER_KEY);
-
   if (!raw) return null;
 
   try {
@@ -31,24 +30,25 @@ export function clearSession() {
 }
 
 export async function login(username, password) {
-  const response = await api.post("/auth/login/", {
-    username,
-    password,
-  });
+  const response = await api.post(
+    "/auth/login/",
+    { username, password },
+    { skipAuth: true },
+  );
 
   saveSession(response.data.token, response.data.user);
   return response.data.user;
 }
 
 export async function register(payload) {
-  const response = await api.post("/auth/register/", payload);
+  const response = await api.post("/auth/register/", payload, { skipAuth: true });
   saveSession(response.data.token, response.data.user);
   return response.data.user;
 }
 
 export async function logout() {
   try {
-    await api.post("/auth/logout/");
+    if (getToken()) await api.post("/auth/logout/");
   } finally {
     clearSession();
   }

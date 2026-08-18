@@ -1,183 +1,230 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
-import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
 import Footer from "../components/Footer";
-import api, { extractList } from "../services/api";
+import Hero from "../components/Hero";
+import Navbar from "../components/Navbar";
+import api, { extractList, getApiError, getFieldErrors } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import "../styles/home.css";
 
 const activities = [
-  ["01", "Musculation", "Renforcement, progression et entraînement libre dans un environnement motivant."],
-  ["02", "Cardio", "Travaillez endurance et condition physique avec des séances adaptées à votre rythme."],
-  ["03", "Cross training", "Des entraînements complets, dynamiques et variés pour repousser vos limites."],
-  ["04", "Suivi digital", "Votre abonnement, vos paiements, vos présences et votre accès réunis dans votre espace."],
+  { icon: "01", title: "Musculation", text: "Un univers dédié au renforcement, à la progression et à l’entraînement libre." },
+  { icon: "02", title: "Cardio", text: "Développez votre endurance avec des séances adaptées à votre rythme." },
+  { icon: "03", title: "Cross-training", text: "Des entraînements variés qui combinent intensité, mobilité et condition physique." },
+  { icon: "04", title: "Cours collectifs", text: "Une expérience dynamique à plusieurs, pensée pour garder la motivation." },
+  { icon: "05", title: "Remise en forme", text: "Reprenez une activité progressivement et construisez une routine durable." },
+  { icon: "06", title: "Coaching", text: "Un accompagnement humain pour mieux structurer vos objectifs et vos séances." },
 ];
 
-const advantages = [
-  "Un espace adhérent accessible à tout moment",
-  "Suivi simple de votre abonnement",
-  "Historique de paiements et de présences",
-  "Identifiant QR personnel pour l’accès",
+const coachingSteps = [
+  "Comprendre votre point de départ",
+  "Définir des objectifs réalistes",
+  "Structurer votre pratique",
+  "Suivre vos progrès dans le temps",
 ];
+
+const initialContact = {
+  full_name: "",
+  email: "",
+  phone: "",
+  subject: "Demande d'information",
+  message: "",
+};
 
 function Home() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [plans, setPlans] = useState([]);
-  const [contact, setContact] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    subject: "Demande d'information",
-    message: "",
-  });
+  const [plansState, setPlansState] = useState({ loading: false, unavailablePublicly: false, error: "" });
+  const [contact, setContact] = useState(initialContact);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [contactState, setContactState] = useState({ loading: false, message: "", error: false });
 
   useEffect(() => {
+    // Attendre la validation de /auth/me/ évite d'envoyer un ancien token invalide
+    // vers /plans/ pendant le démarrage de l'application.
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      setPlans([]);
+      setPlansState({ loading: false, unavailablePublicly: true, error: "" });
+      return;
+    }
+
+    setPlansState({ loading: true, unavailablePublicly: false, error: "" });
     api.get("/plans/")
-      .then((response) => setPlans(extractList(response).filter((plan) => plan.is_active)))
-      .catch(() => setPlans([]));
-  }, []);
+      .then((response) => {
+        setPlans(extractList(response).filter((plan) => plan.is_active));
+        setPlansState({ loading: false, unavailablePublicly: false, error: "" });
+      })
+      .catch((error) => {
+        setPlansState({ loading: false, unavailablePublicly: false, error: getApiError(error, "Impossible de charger les formules.") });
+      });
+  }, [authLoading, isAuthenticated]);
+
+  const contactDisabled = useMemo(() => contactState.loading, [contactState.loading]);
 
   function handleContactChange(event) {
     const { name, value } = event.target;
     setContact((current) => ({ ...current, [name]: value }));
+    setFieldErrors((current) => ({ ...current, [name]: "" }));
   }
 
   async function handleContactSubmit(event) {
     event.preventDefault();
+    if (contactState.loading) return;
+
+    setFieldErrors({});
     setContactState({ loading: true, message: "", error: false });
 
     try {
-      await api.post("/contacts/", contact);
-      setContact({ full_name: "", email: "", phone: "", subject: "Demande d'information", message: "" });
+      await api.post("/contacts/", contact, { skipAuth: true });
+      setContact(initialContact);
       setContactState({ loading: false, message: "Votre message a bien été envoyé.", error: false });
-    } catch {
-      setContactState({ loading: false, message: "Impossible d’envoyer le message pour le moment.", error: true });
+    } catch (error) {
+      setFieldErrors(getFieldErrors(error));
+      setContactState({ loading: false, message: getApiError(error, "Impossible d’envoyer votre message."), error: true });
     }
   }
 
   return (
     <div className="public-site">
       <Navbar />
-
       <main>
         <Hero />
 
         <section className="public-section" id="activities">
-          <div className="section-kicker">BOUGEZ À VOTRE FAÇON</div>
+          <div className="section-kicker">BOUGER À VOTRE FAÇON</div>
           <div className="section-intro-row">
-            <h2>Des activités pour chaque objectif.</h2>
-            <p>
-              Une ambiance sportive forte et un parcours digital simple avant,
-              pendant et après vos séances.
-            </p>
+            <h2>Des activités pour construire votre propre routine.</h2>
+            <p>Une présentation claire des univers d’entraînement GymSaaS, sans données chiffrées inventées.</p>
           </div>
-
           <div className="activity-grid">
-            {activities.map(([number, title, description]) => (
-              <article className="activity-card" key={number}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p>{description}</p>
+            {activities.map((activity) => (
+              <article className="activity-card" key={activity.title}>
+                <span>{activity.icon}</span>
+                <h3>{activity.title}</h3>
+                <p>{activity.text}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="public-section advantages-section" id="advantages">
-          <div className="advantages-copy">
-            <span className="eyebrow">PLUS QU’UNE SALLE</span>
-            <h2>Votre expérience fitness continue aussi en ligne.</h2>
-            <p>
-              GymSaaS donne à chaque adhérent son propre espace pour rester
-              informé et autonome.
-            </p>
-            <Link className="btn btn-primary btn-large" to="/register">
-              Créer mon espace
-            </Link>
-          </div>
-
-          <div className="advantages-list">
-            {advantages.map((item, index) => (
-              <div className="advantage-line" key={item}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{item}</strong>
-              </div>
-            ))}
+        <section className="coaching-section" id="coaching">
+          <div className="public-section coaching-inner">
+            <div className="coaching-copy">
+              <span className="eyebrow">ACCOMPAGNEMENT</span>
+              <h2>Un parcours plus humain que simplement “venir s’entraîner”.</h2>
+              <p>Cette section prépare la future intégration de programmes et de suivi. Elle n’affiche aucune progression fictive.</p>
+              <Link className="btn btn-primary" to="/register">Créer mon espace</Link>
+            </div>
+            <div className="coaching-steps">
+              {coachingSteps.map((step, index) => (
+                <div className="coaching-step" key={step}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <strong>{step}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         <section className="public-section" id="plans">
-          <div className="section-kicker">NOS FORMULES</div>
+          <div className="section-kicker">FORMULES</div>
           <div className="section-intro-row">
-            <h2>Choisissez votre rythme.</h2>
-            <p>Les formules ci-dessous viennent directement de Django.</p>
+            <h2>Choisissez la formule qui vous convient.</h2>
+            <p>Les cartes affichent uniquement les formules réellement renvoyées par Django.</p>
           </div>
 
-          <div className="public-plan-grid">
-            {plans.length === 0 ? (
-              <div className="public-empty">Aucune formule active pour le moment.</div>
-            ) : (
-              plans.slice(0, 4).map((plan, index) => (
-                <article className={`public-plan-card ${index === 1 ? "featured" : ""}`} key={plan.id}>
-                  <span className="plan-number">0{index + 1}</span>
+          {plansState.loading && <div className="public-state-card">Chargement des formules…</div>}
+          {plansState.error && <div className="public-state-card error">{plansState.error}</div>}
+
+          {plansState.unavailablePublicly ? (
+            <div className="plans-api-notice">
+              <div>
+                <span className="eyebrow">FORMULES EN LIGNE</span>
+                <h3>Connectez-vous pour consulter les formules disponibles.</h3>
+                <p>La consultation publique sera activée dès que l’API de la salle l’autorisera. Aucune offre fictive n’est affichée.</p>
+              </div>
+              <Link className="btn btn-primary" to="/login">Accéder à mon espace</Link>
+            </div>
+          ) : (
+            <div className="public-plan-grid">
+              {plans.map((plan) => (
+                <article className="public-plan-card" key={plan.id}>
+                  <span className="plan-duration">{plan.duration_days} jours</span>
                   <h3>{plan.name}</h3>
-                  <div className="plan-price">
-                    <strong>{Number(plan.price).toLocaleString("fr-FR")}</strong>
-                    <span>DH</span>
-                  </div>
-                  <p>{plan.description || `${plan.duration_days} jours d'accès.`}</p>
-                  <small>{plan.duration_days} jours</small>
-                  <Link className="btn btn-secondary" to="/register">Je m'inscris</Link>
+                  <div className="plan-price"><strong>{formatMoney(plan.price)}</strong><span>DH</span></div>
+                  <p>{plan.description || "Aucune description renseignée."}</p>
+                  <Link className="btn btn-dark" to="/register">Je m’inscris</Link>
                 </article>
-              ))
-            )}
-          </div>
+              ))}
+              {!plans.length && <div className="public-state-card">Aucune formule active n’est disponible actuellement.</div>}
+            </div>
+          )}
         </section>
 
-        <section className="public-section public-join">
-          <div>
-            <span className="eyebrow">VOTRE ESPACE ADHÉRENT</span>
-            <h2>Tout ce qui vous concerne. Sans chercher.</h2>
-          </div>
-          <div className="join-preview">
-            <div><span>Abonnement</span><strong>Actif</strong></div>
-            <div><span>Paiements</span><strong>Historique</strong></div>
-            <div><span>Présences</span><strong>Suivi</strong></div>
-            <div><span>Accès</span><strong>QR personnel</strong></div>
-          </div>
-          <div className="join-actions">
-            <Link className="btn btn-primary btn-large" to="/register">Créer un compte</Link>
-            <Link className="btn btn-secondary btn-large" to="/login">Se connecter</Link>
+        <section className="gym-preview-section" id="gym">
+          <div className="public-section gym-preview-inner">
+            <div>
+              <span className="eyebrow">LA SALLE</span>
+              <h2>Retrouvez bientôt ici toutes les informations de votre club.</h2>
+              <p>Nous n’affichons que des informations issues du système GymSaaS. Les coordonnées, horaires et équipements seront publiés dès que l’API de la salle sera disponible.</p>
+            </div>
+            <div className="gym-missing-api">
+              <strong>Informations du club</strong>
+              <span>Coordonnées · horaires · équipements · présentation</span>
+              <a className="btn btn-dark" href="#contact">Nous contacter</a>
+            </div>
           </div>
         </section>
 
         <section className="public-section contact-section" id="contact">
           <div className="contact-copy">
             <span className="eyebrow">CONTACT</span>
-            <h2>Une question avant de commencer ?</h2>
-            <p>Envoyez-nous un message. L’équipe pourra vous répondre rapidement.</p>
+            <h2>Une question avant de vous inscrire ?</h2>
+            <p>Envoyez votre demande. Le formulaire utilise l’endpoint public Django existant.</p>
           </div>
 
-          <form className="contact-form" onSubmit={handleContactSubmit}>
-            <input name="full_name" value={contact.full_name} onChange={handleContactChange} placeholder="Nom complet" required />
-            <input name="email" type="email" value={contact.email} onChange={handleContactChange} placeholder="E-mail" required />
-            <input name="phone" value={contact.phone} onChange={handleContactChange} placeholder="Téléphone" />
-            <input name="subject" value={contact.subject} onChange={handleContactChange} placeholder="Sujet" required />
-            <textarea name="message" value={contact.message} onChange={handleContactChange} placeholder="Votre message" rows="5" required />
+          <form className="contact-form" onSubmit={handleContactSubmit} noValidate>
             {contactState.message && (
-              <div className={contactState.error ? "contact-status error" : "contact-status success"}>{contactState.message}</div>
+              <div className={contactState.error ? "form-error" : "form-success"} role="status">{contactState.message}</div>
             )}
-            <button className="btn btn-primary btn-large" disabled={contactState.loading}>
-              {contactState.loading ? "Envoi..." : "Envoyer"}
+
+            <div className="form-grid">
+              <Field label="Nom complet" name="full_name" value={contact.full_name} onChange={handleContactChange} error={fieldErrors.full_name} required />
+              <Field label="E-mail" name="email" type="email" value={contact.email} onChange={handleContactChange} error={fieldErrors.email} required />
+              <Field label="Téléphone" name="phone" type="tel" value={contact.phone} onChange={handleContactChange} error={fieldErrors.phone} />
+              <Field label="Sujet" name="subject" value={contact.subject} onChange={handleContactChange} error={fieldErrors.subject} required />
+            </div>
+
+            <label className="field-label" htmlFor="message">Message</label>
+            <textarea id="message" name="message" value={contact.message} onChange={handleContactChange} rows="6" required aria-invalid={Boolean(fieldErrors.message)} />
+            {fieldErrors.message && <small className="field-error">{fieldErrors.message}</small>}
+
+            <button className="btn btn-primary btn-large" type="submit" disabled={contactDisabled}>
+              {contactState.loading ? "Envoi…" : "Envoyer ma demande"}
             </button>
           </form>
         </section>
       </main>
-
       <Footer />
     </div>
   );
+}
+
+function Field({ label, name, error, ...props }) {
+  return (
+    <div className="field-wrap">
+      <label className="field-label" htmlFor={name}>{label}</label>
+      <input id={name} name={name} aria-invalid={Boolean(error)} {...props} />
+      {error && <small className="field-error">{error}</small>}
+    </div>
+  );
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("fr-MA", { maximumFractionDigits: 2 }).format(Number(value || 0));
 }
 
 export default Home;
