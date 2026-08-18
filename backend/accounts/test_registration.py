@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from members.models import Member
@@ -52,11 +51,6 @@ class PublicRegistrationAPITests(APITestCase):
             Member.objects.count(),
             1,
         )
-        self.assertEqual(
-            Token.objects.count(),
-            1,
-        )
-
         user = User.objects.get(
             username="new-public-member",
         )
@@ -90,7 +84,11 @@ class PublicRegistrationAPITests(APITestCase):
         )
 
         self.assertIn(
-            "token",
+            "access",
+            response.data,
+        )
+        self.assertIn(
+            "refresh",
             response.data,
         )
         self.assertEqual(
@@ -285,7 +283,11 @@ class PublicRegistrationAPITests(APITestCase):
             status.HTTP_200_OK,
         )
         self.assertIn(
-            "token",
+            "access",
+            login_response.data,
+        )
+        self.assertIn(
+            "refresh",
             login_response.data,
         )
         self.assertEqual(

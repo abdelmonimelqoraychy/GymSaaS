@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -79,7 +80,7 @@ INSTALLED_APPS = [
 
     # Applications externes
     "rest_framework",
-    "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
 
     # Applications du projet
@@ -260,8 +261,8 @@ AUTH_USER_MODEL = "accounts.User"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         (
-            "rest_framework.authentication."
-            "TokenAuthentication"
+            "rest_framework_simplejwt.authentication."
+            "JWTAuthentication"
         ),
         (
             "rest_framework.authentication."
@@ -274,6 +275,20 @@ REST_FRAMEWORK = {
             "IsAuthenticated"
         ),
     ],
+}
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "CHECK_REVOKE_TOKEN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "SIGNING_KEY": os.getenv(
+        "JWT_SIGNING_KEY",
+        SECRET_KEY,
+    ),
 }
 
 

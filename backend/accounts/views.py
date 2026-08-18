@@ -1,11 +1,17 @@
 from django.contrib.auth import authenticate
 from rest_framework import (
     permissions,
+    serializers,
     status,
 )
-from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from auditlogs.models import AuditLog
 from auditlogs.services import create_audit_log
@@ -18,6 +24,26 @@ from .serializers import (
     RegistrationSerializer,
     UserSerializer,
 )
+
+
+def create_token_pair(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+    }
+
+
+def blacklist_user_tokens(user):
+    outstanding_tokens = OutstandingToken.objects.filter(
+        user=user,
+    )
+
+    for outstanding_token in outstanding_tokens:
+        BlacklistedToken.objects.get_or_create(
+            token=outstanding_token,
+        )
 
 
 class RegisterView(APIView):
@@ -34,9 +60,7 @@ class RegisterView(APIView):
         )
 
         user = serializer.save()
-        token, _ = Token.objects.get_or_create(
-            user=user,
-        )
+        tokens = create_token_pair(user)
 
         member = user.member_profile
 
@@ -57,7 +81,7 @@ class RegisterView(APIView):
 
         return Response(
             {
-                "token": token.key,
+                **tokens,
                 "user": UserSerializer(
                     user,
                 ).data,
@@ -122,9 +146,7 @@ class LoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        token, _ = Token.objects.get_or_create(
-            user=user,
-        )
+        tokens = create_token_pair(user)
 
         create_audit_log(
             request=request,
@@ -140,7 +162,7 @@ class LoginView(APIView):
 
         return Response(
             {
-                "token": token.key,
+                **tokens,
                 "user": UserSerializer(
                     user,
                 ).data,
@@ -155,6 +177,47 @@ class LogoutView(APIView):
     )
 
     def post(self, request):
+        refresh_value = request.data.get(
+            "refresh",
+        )
+
+        if not refresh_value:
+            raise serializers.ValidationError(
+                {
+                    "refresh": (
+                        "Le refresh token est obligatoire."
+                    ),
+                }
+            )
+
+        try:
+            refresh = RefreshToken(
+                refresh_value,
+            )
+
+            if str(refresh["user_id"]) != str(
+                request.user.pk,
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "refresh": (
+                            "Ce refresh token ne correspond "
+                            "pas à l’utilisateur connecté."
+                        ),
+                    }
+                )
+
+            refresh.blacklist()
+        except TokenError as error:
+            raise serializers.ValidationError(
+                {
+                    "refresh": (
+                        "Le refresh token est invalide "
+                        "ou expiré."
+                    ),
+                }
+            ) from error
+
         create_audit_log(
             request=request,
             action=AuditLog.Action.LOGOUT,
@@ -164,10 +227,6 @@ class LogoutView(APIView):
                 "username": request.user.username,
             },
         )
-
-        Token.objects.filter(
-            user=request.user,
-        ).delete()
 
         return Response(
             {
@@ -211,13 +270,8 @@ class ChangePasswordView(APIView):
 
         user = serializer.save()
 
-        Token.objects.filter(
-            user=user,
-        ).delete()
-
-        new_token = Token.objects.create(
-            user=user,
-        )
+        blacklist_user_tokens(user)
+        tokens = create_token_pair(user)
 
         create_audit_log(
             request=request,
@@ -239,7 +293,7 @@ class ChangePasswordView(APIView):
                 "detail": (
                     "Mot de passe modifié avec succès."
                 ),
-                "token": new_token.key,
+                **tokens,
             },
             status=status.HTTP_200_OK,
         )

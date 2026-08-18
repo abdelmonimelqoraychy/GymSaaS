@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework import (
     filters,
     permissions,
@@ -76,6 +77,8 @@ class MemberViewSet(viewsets.ModelViewSet):
         "user__last_name",
         "user__email",
         "user__phone",
+        "emergency_phone",
+        "address",
     )
     ordering_fields = (
         "joined_at",
@@ -129,6 +132,14 @@ class MemberViewSet(viewsets.ModelViewSet):
         was_active = serializer.instance.is_active
         member = serializer.save()
 
+        if member.user.is_active != member.is_active:
+            member.user.is_active = member.is_active
+            member.user.save(
+                update_fields=(
+                    "is_active",
+                ),
+            )
+
         action = AuditLog.Action.UPDATE
 
         if was_active and not member.is_active:
@@ -147,11 +158,13 @@ class MemberViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @transaction.atomic
     def perform_destroy(self, instance):
         entity_id = str(instance.pk)
         username = instance.user.username
+        user = instance.user
 
-        instance.delete()
+        user.delete()
 
         create_audit_log(
             request=self.request,

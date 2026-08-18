@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 User = get_user_model()
@@ -20,8 +20,12 @@ class ChangePasswordAPITests(APITestCase):
             role=User.Role.MEMBER,
         )
 
-        self.old_token = Token.objects.create(
-            user=self.user,
+        old_refresh = RefreshToken.for_user(
+            self.user,
+        )
+        self.old_refresh = str(old_refresh)
+        self.old_access = str(
+            old_refresh.access_token,
         )
 
         self.url = reverse(
@@ -52,10 +56,10 @@ class ChangePasswordAPITests(APITestCase):
         )
 
     def test_user_can_change_password(self):
-        old_token_key = self.old_token.key
-
-        self.client.force_authenticate(
-            user=self.user,
+        self.client.credentials(
+            HTTP_AUTHORIZATION=(
+                f"Bearer {self.old_access}"
+            ),
         )
 
         response = self.client.post(
@@ -75,7 +79,11 @@ class ChangePasswordAPITests(APITestCase):
             status.HTTP_200_OK,
         )
         self.assertIn(
-            "token",
+            "access",
+            response.data,
+        )
+        self.assertIn(
+            "refresh",
             response.data,
         )
 
@@ -91,16 +99,32 @@ class ChangePasswordAPITests(APITestCase):
                 self.old_password,
             )
         )
-        self.assertFalse(
-            Token.objects.filter(
-                key=old_token_key,
-            ).exists()
+        self.client.credentials(
+            HTTP_AUTHORIZATION=(
+                f"Bearer {self.old_access}"
+            ),
         )
-        self.assertTrue(
-            Token.objects.filter(
-                key=response.data["token"],
-                user=self.user,
-            ).exists()
+        old_access_response = self.client.get(
+            reverse("auth-me"),
+        )
+
+        self.assertEqual(
+            old_access_response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+        self.client.credentials()
+        old_refresh_response = self.client.post(
+            reverse("auth-token-refresh"),
+            {
+                "refresh": self.old_refresh,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            old_refresh_response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
         )
 
     def test_old_password_must_be_correct(self):
