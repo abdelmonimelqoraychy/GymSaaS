@@ -1,36 +1,11 @@
-# Frontend GymSaaS connecté au backend Django
+# Frontend GymSaaS - intégration API
 
-Ce frontend n'utilise plus `src/data/mockData.js`.
+Le frontend utilise le proxy Vite `/api` en développement et respecte le contrat Django existant.
 
-## API utilisées
+- Authentification : `Authorization: Token <token>`
+- Rôles : `SUPER_ADMIN`, `COORDINATOR`, `MEMBER`
+- Connexion et inscription : requêtes publiques avec `skipAuth`
+- Session validée au démarrage via `/api/auth/me/`
+- Les erreurs `401` sur les routes protégées nettoient la session locale.
 
-- `POST /api/auth/login/`
-- `POST /api/auth/logout/`
-- `GET /api/auth/me/`
-- `GET /api/members/`
-- `GET /api/plans/`
-- `GET /api/subscriptions/`
-- `GET /api/payments/`
-
-## Lancement local
-
-### Backend
-
-```bash
-cd backend
-python manage.py runserver
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Le proxy Vite envoie automatiquement les requêtes `/api` vers `http://127.0.0.1:8000`.
-
-## Remarque Gym
-
-Le modèle `Gym` existe dans Django, mais le projet actuel ne possède pas encore de route API `Gym`. La page `Ma salle` n'affiche donc pas de fausses données.
+Pour la liste complète des endpoints utilisés et des endpoints backend encore nécessaires, voir [`BACKEND_COMPATIBILITY.md`](./BACKEND_COMPATIBILITY.md).

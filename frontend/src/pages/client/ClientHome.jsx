@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import api from "../../services/api";
-import { getStoredUser } from "../../services/auth";
+import { useAuth } from "../../context/AuthContext";
 import "../../styles/client-portal.css";
 
 function ClientHome() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const [member, setMember] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [payments, setPayments] = useState([]);

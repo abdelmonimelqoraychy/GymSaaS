@@ -1,14 +1,17 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 
-import { getStoredUser, getToken } from "../services/auth";
-import { isAdmin, isMember } from "../services/roles";
+import { useAuth } from "../context/AuthContext";
+import { homeForUser, isAdmin, isMember } from "../services/roles";
 
 function RoleRoute({ allow }) {
   const location = useLocation();
-  const token = getToken();
-  const user = getStoredUser();
+  const { user, loading, isAuthenticated } = useAuth();
 
-  if (!token || !user) {
+  if (loading) {
+    return <div className="route-loader" role="status">Validation de votre session…</div>;
+  }
+
+  if (!isAuthenticated || !user) {
     return (
       <Navigate
         to={allow === "admin" ? "/admin-login" : "/login"}
@@ -21,7 +24,7 @@ function RoleRoute({ allow }) {
   const allowed = allow === "admin" ? isAdmin(user) : isMember(user);
 
   if (!allowed) {
-    return <Navigate to={isAdmin(user) ? "/dashboard" : "/client"} replace />;
+    return <Navigate to={homeForUser(user)} replace />;
   }
 
   return <Outlet />;

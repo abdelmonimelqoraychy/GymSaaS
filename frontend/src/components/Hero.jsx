@@ -1,40 +1,28 @@
 import { Link } from "react-router";
+
 import heroImage from "../assets/hero.png";
 
 function Hero() {
   return (
-    <section className="fitness-hero">
-      <div className="fitness-hero-media">
-        <img src={heroImage} alt="Entraînement dans une salle de sport" />
-        <div className="fitness-hero-shade" />
-      </div>
-
-      <div className="fitness-hero-content">
-        <span className="eyebrow">GYMSAAS FITNESS CLUB</span>
-        <h1>
-          Bougez fort.
-          <span> Progressez ensemble.</span>
-        </h1>
+    <section className="public-hero" aria-labelledby="hero-title">
+      <img className="public-hero-image" src={heroImage} alt="Espace d'entraînement GymSaaS" />
+      <div className="public-hero-overlay" />
+      <div className="public-hero-content">
+        <span className="hero-kicker">VOTRE ÉNERGIE. VOTRE RYTHME.</span>
+        <h1 id="hero-title">Une expérience fitness simple, motivante et connectée.</h1>
         <p>
-          Une expérience fitness moderne avec un espace adhérent pour suivre
-          votre abonnement, vos paiements et vos passages au club.
+          Découvrez l’univers GymSaaS et gérez ensuite votre abonnement, vos paiements,
+          vos présences et votre accès depuis votre espace adhérent.
         </p>
-
         <div className="hero-actions">
-          <Link className="btn btn-primary btn-large" to="/register">
-            Rejoindre le club
-          </Link>
-          <Link className="btn btn-secondary btn-large" to="/login">
-            Espace client
-          </Link>
+          <a className="btn btn-primary btn-large" href="#plans">Découvrir les formules</a>
+          <Link className="btn btn-ghost btn-large" to="/register">Créer mon espace</Link>
         </div>
-      </div>
-
-      <div className="hero-bottom-line">
-        <span>Musculation</span>
-        <span>Cardio</span>
-        <span>Cross training</span>
-        <span>Suivi digital</span>
+        <div className="hero-proof" aria-label="Services GymSaaS">
+          <span>Coaching</span>
+          <span>Accès digital</span>
+          <span>Suivi adhérent</span>
+        </div>
       </div>
     </section>
   );
