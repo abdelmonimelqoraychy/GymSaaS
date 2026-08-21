@@ -1,21 +1,61 @@
 import axios from "axios";
 
+import {
+  clearSession,
+  getAccessToken,
+  getRefreshToken,
+  saveTokens,
+} from "./session";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
 const api = axios.create({
   // En local Vite proxifie /api vers Django (voir vite.config.js).
   // En production, définir VITE_API_URL si l'API est sur un autre domaine.
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
+// Client séparé pour éviter que le renouvellement du token ne déclenche
+// lui-même les intercepteurs du client principal.
+export const refreshApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+let refreshPromise = null;
+
+function notifyExpiredSession() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("gymsaas:auth-expired"));
+  }
+}
+
+async function renewAccessToken() {
+  const refresh = getRefreshToken();
+  if (!refresh) throw new Error("Refresh token absent.");
+
+  const response = await refreshApi.post("/auth/token/refresh/", { refresh });
+  const nextAccess = response.data?.access;
+  const nextRefresh = response.data?.refresh || refresh;
+
+  if (!nextAccess) throw new Error("Access token absent de la réponse.");
+
+  saveTokens(nextAccess, nextRefresh);
+  return nextAccess;
+}
+
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authToken");
+    const token = getAccessToken();
 
     if (token && !config.skipAuth) {
       config.headers = config.headers || {};
-      config.headers.Authorization = `Token ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
@@ -25,22 +65,42 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error.response?.status;
-    const skipAuth = Boolean(error.config?.skipAuth);
+    const originalRequest = error.config;
+    const skipAuth = Boolean(originalRequest?.skipAuth);
 
-    // Un 401 sur une route protégée invalide la session locale.
-    // Les 401 de login public restent intacts pour conserver le message Django.
-    if (status === 401 && !skipAuth) {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("gymsaas:auth-expired"));
-      }
+    if (status !== 401 || skipAuth || !originalRequest || originalRequest._retry) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    originalRequest._retry = true;
+
+    try {
+      // Tous les appels qui reçoivent simultanément un 401 partagent une seule
+      // requête de renouvellement.
+      if (!refreshPromise) {
+        refreshPromise = renewAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+
+      const access = await refreshPromise;
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${access}`;
+
+      // Avec la rotation SimpleJWT, le refresh initial est blacklisté. Une
+      // déconnexion rejouée doit donc envoyer le nouveau refresh token.
+      if (String(originalRequest.url).includes("/auth/logout/")) {
+        originalRequest.data = JSON.stringify({ refresh: getRefreshToken() });
+      }
+
+      return await api(originalRequest);
+    } catch {
+      clearSession();
+      notifyExpiredSession();
+      return Promise.reject(error);
+    }
   },
 );
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { getCurrentUser, getStoredUser } from "../../services/auth";
+import { saveTokens } from "../../services/session";
 import "../../styles/client-portal.css";
 
 const emptyPasswordForm = { old_password: "", new_password: "", new_password_confirm: "" };
@@ -83,7 +84,7 @@ function MyProfile() {
       setError("");
       setSuccess("");
       const response = await api.post("/auth/change-password/", passwordForm);
-      localStorage.setItem("authToken", response.data.token);
+      saveTokens(response.data.access, response.data.refresh);
       setPasswordForm(emptyPasswordForm);
       setSuccess(response.data.detail || "Mot de passe modifié avec succès.");
     } catch (requestError) {
@@ -154,7 +155,7 @@ function MyProfile() {
       </article>
 
       <article className="client-panel password-card">
-        <div className="client-page-heading compact"><span className="eyebrow">SÉCURITÉ</span><h2>Changer mon mot de passe</h2><p>Après le changement, le nouveau token renvoyé par Django est enregistré automatiquement.</p></div>
+        <div className="client-page-heading compact"><span className="eyebrow">SÉCURITÉ</span><h2>Changer mon mot de passe</h2><p>Après le changement, votre session sécurisée est renouvelée automatiquement.</p></div>
         <form className="client-profile-form" onSubmit={changePassword}>
           <div className="client-form-grid">
             <ProfileField label="Ancien mot de passe" name="old_password" type="password" value={passwordForm.old_password} onChange={handlePasswordChange} required />

@@ -36,8 +36,8 @@ for (const file of files) {
     if (/role\s*===?\s*["']ADMIN["']/.test(source)) {
       problems.push(`${path.relative(process.cwd(), file)}: le rôle inexistant ADMIN est encore utilisé.`);
     }
-    if (/Authorization\s*[:=][^\n]*Bearer/i.test(source)) {
-      problems.push(`${path.relative(process.cwd(), file)}: Bearer détecté ; GymSaaS utilise Authorization: Token.`);
+    if (/Authorization\s*[:=][^\n]*Token\s/i.test(source)) {
+      problems.push(`${path.relative(process.cwd(), file)}: ancien schéma Token détecté ; GymSaaS utilise Authorization: Bearer.`);
     }
   }
 }

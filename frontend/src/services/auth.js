@@ -1,33 +1,17 @@
 import api from "./api";
-
-const TOKEN_KEY = "authToken";
-const USER_KEY = "authUser";
+import {
+  clearSession,
+  getAccessToken,
+  getRefreshToken,
+  getStoredUser,
+  saveSession,
+} from "./session";
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  return getAccessToken();
 }
 
-export function getStoredUser() {
-  const raw = localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    localStorage.removeItem(USER_KEY);
-    return null;
-  }
-}
-
-export function saveSession(token, user) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-export function clearSession() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-}
+export { clearSession, getStoredUser, saveSession };
 
 export async function login(username, password) {
   const response = await api.post(
@@ -36,19 +20,21 @@ export async function login(username, password) {
     { skipAuth: true },
   );
 
-  saveSession(response.data.token, response.data.user);
+  saveSession(response.data.access, response.data.refresh, response.data.user);
   return response.data.user;
 }
 
 export async function register(payload) {
   const response = await api.post("/auth/register/", payload, { skipAuth: true });
-  saveSession(response.data.token, response.data.user);
+  saveSession(response.data.access, response.data.refresh, response.data.user);
   return response.data.user;
 }
 
 export async function logout() {
+  const refresh = getRefreshToken();
+
   try {
-    if (getToken()) await api.post("/auth/logout/");
+    if (getToken() && refresh) await api.post("/auth/logout/", { refresh });
   } finally {
     clearSession();
   }
@@ -56,6 +42,6 @@ export async function logout() {
 
 export async function getCurrentUser() {
   const response = await api.get("/auth/me/");
-  localStorage.setItem(USER_KEY, JSON.stringify(response.data));
+  localStorage.setItem("authUser", JSON.stringify(response.data));
   return response.data;
 }

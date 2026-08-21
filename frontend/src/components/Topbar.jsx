@@ -19,9 +19,9 @@ function Topbar({ onMenuClick }) {
         <MenuIcon />
       </button>
 
-      <div className="topbar-search">
-        <SearchIcon />
-        <input type="search" placeholder="Rechercher…" aria-label="Rechercher" />
+      <div className="topbar-title">
+        <strong>Espace de gestion</strong>
+        <span>Administration GymSaaS</span>
       </div>
 
       <div className="topbar-user">
@@ -33,10 +33,6 @@ function Topbar({ onMenuClick }) {
       </div>
     </header>
   );
-}
-
-function SearchIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>;
 }
 
 function MenuIcon() {
