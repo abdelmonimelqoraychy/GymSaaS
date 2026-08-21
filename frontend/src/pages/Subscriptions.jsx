@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api, { extractList } from "../services/api";
 import "../styles/admin-tools.css";
 
@@ -15,6 +15,11 @@ function Subscriptions() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  const selectedPlan = useMemo(
+    () => plans.find((plan) => String(plan.id) === String(form.plan)) || null,
+    [plans, form.plan],
+  );
 
   async function loadData() {
     try {
@@ -120,6 +125,16 @@ function Subscriptions() {
                 {plans.filter((plan) => plan.is_active).map((plan) => <option key={plan.id} value={plan.id}>{plan.name} — {formatMoney(plan.price)} DH</option>)}
               </select>
             </div>
+            <div className="admin-field">
+              <label htmlFor="subscription-price">Prix automatique</label>
+              <input
+                id="subscription-price"
+                value={selectedPlan ? `${formatMoney(selectedPlan.price)} DH` : "Sélectionnez une formule"}
+                readOnly
+                aria-describedby="subscription-price-help"
+              />
+              <small id="subscription-price-help" className="muted">Le prix est enregistré par Django à partir de la formule.</small>
+            </div>
             <div className="admin-field"><label htmlFor="subscription-start">Date de début</label><input id="subscription-start" name="start_date" type="date" value={form.start_date} onChange={handleChange} required /></div>
             <label className="checkbox-field"><input type="checkbox" name="is_suspended" checked={form.is_suspended} onChange={handleChange} /> Créer l'abonnement suspendu</label>
           </div>
@@ -133,12 +148,13 @@ function Subscriptions() {
       <div className="card table-wrap">
         {loading ? <p className="muted">Chargement des abonnements...</p> : (
           <table>
-            <thead><tr><th>Membre</th><th>Formule</th><th>Début</th><th>Expiration</th><th>Jours restants</th><th>Statut</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Membre</th><th>Formule</th><th>Prix</th><th>Début</th><th>Expiration</th><th>Jours restants</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody>
               {subscriptions.map((subscription) => (
                 <tr key={subscription.id}>
                   <td>{subscription.member_name || `Membre #${subscription.member}`}</td>
                   <td>{subscription.plan_name || `Formule #${subscription.plan}`}</td>
+                  <td>{formatMoney(subscription.price_at_subscription)} DH</td>
                   <td>{formatDate(subscription.start_date)}</td>
                   <td>{formatDate(subscription.end_date)}</td>
                   <td>{subscription.days_remaining}</td>
@@ -151,7 +167,7 @@ function Subscriptions() {
                   </td>
                 </tr>
               ))}
-              {subscriptions.length === 0 && <tr><td colSpan="7" className="muted">Aucun abonnement trouvé.</td></tr>}
+              {subscriptions.length === 0 && <tr><td colSpan="8" className="muted">Aucun abonnement trouvé.</td></tr>}
             </tbody>
           </table>
         )}

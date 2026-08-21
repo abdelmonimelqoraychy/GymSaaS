@@ -26,13 +26,17 @@ function Members() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
 
-  async function loadData() {
+  async function loadData(searchValue = appliedSearch) {
     try {
       setLoading(true);
       setError("");
       const [membersResponse, subscriptionsResponse] = await Promise.all([
-        api.get("/members/"),
+        api.get("/members/", {
+          params: searchValue ? { search: searchValue } : {},
+        }),
         api.get("/subscriptions/"),
       ]);
       setMembers(extractList(membersResponse));
@@ -45,8 +49,21 @@ function Members() {
   }
 
   useEffect(() => {
-    loadData();
+    loadData("");
   }, []);
+
+  async function submitSearch(event) {
+    event.preventDefault();
+    const value = search.trim();
+    setAppliedSearch(value);
+    await loadData(value);
+  }
+
+  async function clearSearch() {
+    setSearch("");
+    setAppliedSearch("");
+    await loadData("");
+  }
 
   const subscriptionByMember = useMemo(() => {
     const map = new Map();
@@ -125,6 +142,24 @@ function Members() {
       {error && <div className="alert-error">{error}</div>}
       {success && <div className="form-success">{success}</div>}
 
+      <form className="card filter-bar member-search" onSubmit={submitSearch}>
+        <label htmlFor="member-search">
+          Rechercher un membre
+          <input
+            id="member-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Nom, utilisateur, e-mail, téléphone…"
+          />
+        </label>
+        <button className="action-button primary" type="submit" disabled={loading}>Rechercher</button>
+        {(search || appliedSearch) && (
+          <button className="action-button" type="button" onClick={clearSearch} disabled={loading}>Effacer</button>
+        )}
+        {appliedSearch && <span className="muted search-result-label">Résultats pour « {appliedSearch} »</span>}
+      </form>
+
       {showForm && (
         <form className="card admin-form-card" onSubmit={createMember}>
           <h2>Nouveau membre</h2>
@@ -193,7 +228,13 @@ function Members() {
                   </tr>
                 );
               })}
-              {members.length === 0 && <tr><td colSpan="7" className="muted">Aucun membre trouvé.</td></tr>}
+              {members.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="muted">
+                    {appliedSearch ? "Aucun membre ne correspond à cette recherche." : "Aucun membre trouvé."}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}

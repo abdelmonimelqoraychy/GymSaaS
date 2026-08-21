@@ -119,36 +119,20 @@
   backdrop-filter: blur(15px);
 }
 
-.topbar-search {
+.topbar-title {
   width: min(470px, 48vw);
-  height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 0 14px;
-  border: 1px solid #2a3139;
-  border-radius: 12px;
-  background: #14191f;
+  display: grid;
+  gap: 3px;
 }
 
-.topbar-search svg {
-  width: 19px;
-  height: 19px;
-  fill: none;
-  stroke: #818b97;
-  stroke-width: 1.8;
+.topbar-title strong {
+  color: #f8fafc;
+  font-size: 15px;
 }
 
-.topbar-search input {
-  width: 100%;
-  outline: none;
-  border: 0;
-  background: transparent;
-  color: #ffffff;
-}
-
-.topbar-search input::placeholder {
+.topbar-title span {
   color: #707a86;
+  font-size: 11px;
 }
 
 .topbar-user {
@@ -243,7 +227,7 @@
     padding: 0 16px;
   }
 
-  .topbar-search {
+  .topbar-title {
     width: 100%;
   }
 
@@ -300,7 +284,7 @@
   .dashboard-content { width: 100%; margin-left: 0; }
   .app-topbar { height: 68px; padding: 0 14px; gap: 10px; }
   .topbar-menu-btn { display: grid; flex: 0 0 42px; }
-  .topbar-search { min-width: 0; flex: 1; }
+  .topbar-title { min-width: 0; flex: 1; }
   .topbar-user-text { display: none; }
   .topbar-avatar { flex: 0 0 38px; width: 38px; height: 38px; }
   .dashboard-outlet { overflow-x: hidden; }
@@ -309,9 +293,4 @@
   .page-title { font-size: 28px !important; }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table-wrap table { min-width: 720px; }
-}
-
-@media (max-width: 430px) {
-  .topbar-search input { font-size: 13px; }
-  .topbar-search input::placeholder { color: transparent; }
 }
