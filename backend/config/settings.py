@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
 
-# Charge le fichier gymsaas/.env s'il existe.
-# Les variables système restent prioritaires.
+# Charge gymsaas/.env en développement.
+# Sur Render, les variables d'environnement sont fournies par le service.
 load_dotenv(PROJECT_ROOT / ".env")
 
 
@@ -43,6 +43,10 @@ def get_env_list(name, default=""):
     ]
 
 
+# ---------------------------------------------------------------------
+# Sécurité générale
+# ---------------------------------------------------------------------
+
 DEVELOPMENT_SECRET_KEY = (
     "django-insecure-development-only-change-this-key"
 )
@@ -69,6 +73,32 @@ ALLOWED_HOSTS = get_env_list(
 )
 
 
+# Render transmet le protocole HTTPS à Django avec cet en-tête.
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
+
+SECURE_SSL_REDIRECT = get_env_bool(
+    "DJANGO_SECURE_SSL_REDIRECT",
+    not DEBUG,
+)
+
+SESSION_COOKIE_SECURE = get_env_bool(
+    "DJANGO_SESSION_COOKIE_SECURE",
+    not DEBUG,
+)
+
+CSRF_COOKIE_SECURE = get_env_bool(
+    "DJANGO_CSRF_COOKIE_SECURE",
+    not DEBUG,
+)
+
+
+# ---------------------------------------------------------------------
+# Applications
+# ---------------------------------------------------------------------
+
 INSTALLED_APPS = [
     # Applications Django
     "django.contrib.admin",
@@ -83,7 +113,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
 
-    # Applications du projet
+    # Applications GymSaaS
     "accounts",
     "gyms",
     "members",
@@ -97,6 +127,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+
+    # WhiteNoise doit être placé juste après SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -140,6 +174,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+
+# ---------------------------------------------------------------------
+# Base de données
+# ---------------------------------------------------------------------
 
 DATABASE_ENGINE = os.getenv(
     "DB_ENGINE",
@@ -208,6 +246,10 @@ else:
     )
 
 
+# ---------------------------------------------------------------------
+# Validation des mots de passe
+# ---------------------------------------------------------------------
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": (
@@ -236,27 +278,58 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# ---------------------------------------------------------------------
+# Internationalisation
+# ---------------------------------------------------------------------
+
 LANGUAGE_CODE = "fr-fr"
 
 TIME_ZONE = "Africa/Casablanca"
 
 USE_I18N = True
-
 USE_TZ = True
 
 
-STATIC_URL = "static/"
+# ---------------------------------------------------------------------
+# Fichiers statiques et médias
+# ---------------------------------------------------------------------
+
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "django.core.files.storage."
+            "FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage."
+            "CompressedManifestStaticFilesStorage"
+        ),
+    },
+}
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+# ---------------------------------------------------------------------
+# Utilisateur personnalisé
+# ---------------------------------------------------------------------
+
 AUTH_USER_MODEL = "accounts.User"
 
+
+# ---------------------------------------------------------------------
+# Django REST Framework
+# ---------------------------------------------------------------------
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -278,19 +351,33 @@ REST_FRAMEWORK = {
 }
 
 
+# ---------------------------------------------------------------------
+# JWT
+# ---------------------------------------------------------------------
+
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=15,
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=7,
+    ),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "CHECK_REVOKE_TOKEN": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_TYPES": (
+        "Bearer",
+    ),
     "SIGNING_KEY": os.getenv(
         "JWT_SIGNING_KEY",
         SECRET_KEY,
     ),
 }
 
+
+# ---------------------------------------------------------------------
+# CORS et CSRF
+# ---------------------------------------------------------------------
 
 CORS_ALLOWED_ORIGINS = get_env_list(
     "CORS_ALLOWED_ORIGINS",
@@ -315,5 +402,4 @@ CSRF_TRUSTED_ORIGINS = get_env_list(
 
 
 LOGIN_REDIRECT_URL = "/api/"
-
 LOGOUT_REDIRECT_URL = "/api-auth/login/"
