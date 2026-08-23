@@ -12,7 +12,6 @@ const links = [
   ["/attendances", "Présences", "activity"],
   ["/reports", "Rapports", "report"],
   ["/audit-logs", "Journal d’activité", "audit"],
-  ["/gym", "Ma salle", "gym"],
 ];
 
 function Sidebar({ open = false, onClose }) {

@@ -535,7 +535,20 @@
 .dashboard-summary-item { min-height: 92px; display: grid; align-content: center; gap: 7px; padding: 16px; border: 1px solid #252d36; border-radius: 12px; background: #0f1419; }
 .dashboard-summary-item span { color: #7f8994; font-size: 11px; }
 .dashboard-summary-item strong { font-size: 26px; }
-.dashboard-summary-line { text-decoration: none; }
+.dashboard-summary-line {
+  grid-template-columns: minmax(0, 1fr) auto;
+  text-decoration: none;
+}
+
+.dashboard-summary-line > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard-summary-line > b {
+  justify-self: end;
+}
 .dashboard-error { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 @media (max-width: 540px) {
   .dashboard-summary-cards { grid-template-columns: 1fr; }

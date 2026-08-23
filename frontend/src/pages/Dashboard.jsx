@@ -62,11 +62,13 @@ function Dashboard() {
           <p>Vue d’ensemble calculée directement par le backend GymSaaS.</p>
         </div>
 
-        <Link className="dashboard-primary-button" to="/members">
-          <PlusIcon />
-          Ajouter un membre
-        </Link>
-      </div>
+<Link
+  className="dashboard-primary-button"
+  to="/members/new"
+>
+  <PlusIcon />
+  Ajouter un membre
+</Link>
 
       {error && (
         <div className="dashboard-error">
