@@ -1,16 +1,14 @@
 import { Route, Routes } from "react-router";
 
 import RoleRoute from "./components/RoleRoute";
-
 import ClientLayout from "./layouts/ClientLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 
-import AdminLogin from "./pages/AdminLogin";
 import AddMember from "./pages/AddMember";
+import AdminLogin from "./pages/AdminLogin";
 import Attendances from "./pages/Attendances";
 import AuditLogs from "./pages/AuditLogs";
 import Dashboard from "./pages/Dashboard";
-import GymSettings from "./pages/GymSettings";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Members from "./pages/Members";
@@ -31,83 +29,39 @@ import MySubscription from "./pages/client/MySubscription";
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
 
-      <Route
-        path="/"
-        element={<Home />}
-      />
-
-      <Route
-        path="/register"
-        element={<Register />}
-      />
-
-      <Route
-        path="/login"
-        element={<Login />}
-      />
-
-      <Route
-        path="/admin-login"
-        element={<AdminLogin />}
-      />
-
-      {/* ESPACE CLIENT */}
-      <Route
-        element={
-          <RoleRoute allow="member" />
-        }
-      >
-
-        <Route
-          element={<ClientLayout />}
-        >
-
-          <Route
-            path="/client"
-            element={<ClientHome />}
-          />
-
+      <Route element={<RoleRoute allow="member" />}>
+        <Route element={<ClientLayout />}>
+          <Route path="/client" element={<ClientHome />} />
           <Route
             path="/client/subscription"
             element={<MySubscription />}
           />
-
           <Route
             path="/client/payments"
             element={<MyPayments />}
           />
-
           <Route
             path="/client/attendances"
             element={<MyAttendances />}
           />
-
           <Route
             path="/client/qr-code"
             element={<MyQRCode />}
           />
-
           <Route
             path="/client/profile"
             element={<MyProfile />}
           />
-
         </Route>
-
       </Route>
 
-      {/* ESPACE ADMIN */}
-      <Route
-        element={
-          <RoleRoute allow="admin" />
-        }
-      >
-
-        <Route
-          element={<DashboardLayout />}
-        >
-
+      <Route element={<RoleRoute allow="admin" />}>
+        <Route element={<DashboardLayout />}>
           <Route
             path="/dashboard"
             element={<Dashboard />}
@@ -118,7 +72,6 @@ function App() {
             element={<Members />}
           />
 
-          {/* Nouvelle page */}
           <Route
             path="/members/new"
             element={<AddMember />}
@@ -153,21 +106,13 @@ function App() {
             path="/audit-logs"
             element={<AuditLogs />}
           />
-
-          <Route
-            path="/gym"
-            element={<GymSettings />}
-          />
-
         </Route>
-
       </Route>
 
       <Route
         path="*"
         element={<NotFound />}
       />
-
     </Routes>
   );
 }

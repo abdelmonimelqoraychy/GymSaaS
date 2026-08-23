@@ -56,21 +56,24 @@ function Dashboard() {
 
   return (
     <div className="dashboard-page">
-      <div className="dashboard-heading">
-        <div>
-          <h1>Dashboard</h1>
-          <p>Vue d’ensemble calculée directement par le backend GymSaaS.</p>
-        </div>
+  <div className="dashboard-heading">
+  <div>
+    <h1>Dashboard</h1>
+    <p>
+      Vue d’ensemble calculée directement par le backend GymSaaS.
+    </p>
+  </div>
 
-<Link
-  className="dashboard-primary-button"
-  to="/members/new"
->
-  <PlusIcon />
-  Ajouter un membre
-</Link>
+  <Link
+    className="dashboard-primary-button"
+    to="/members/new"
+  >
+    <PlusIcon />
+    Ajouter un membre
+  </Link>
+</div>
 
-      {error && (
+{error && (
         <div className="dashboard-error">
           <span>{error}</span>
           <button type="button" className="action-button" onClick={loadDashboard}>Réessayer</button>
