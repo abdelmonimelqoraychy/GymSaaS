@@ -4,11 +4,11 @@ import RoleRoute from "./components/RoleRoute";
 import ClientLayout from "./layouts/ClientLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 
+import AddMember from "./pages/AddMember";
 import AdminLogin from "./pages/AdminLogin";
 import Attendances from "./pages/Attendances";
 import AuditLogs from "./pages/AuditLogs";
 import Dashboard from "./pages/Dashboard";
-import GymSettings from "./pages/GymSettings";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Members from "./pages/Members";
@@ -37,29 +37,82 @@ function App() {
       <Route element={<RoleRoute allow="member" />}>
         <Route element={<ClientLayout />}>
           <Route path="/client" element={<ClientHome />} />
-          <Route path="/client/subscription" element={<MySubscription />} />
-          <Route path="/client/payments" element={<MyPayments />} />
-          <Route path="/client/attendances" element={<MyAttendances />} />
-          <Route path="/client/qr-code" element={<MyQRCode />} />
-          <Route path="/client/profile" element={<MyProfile />} />
+          <Route
+            path="/client/subscription"
+            element={<MySubscription />}
+          />
+          <Route
+            path="/client/payments"
+            element={<MyPayments />}
+          />
+          <Route
+            path="/client/attendances"
+            element={<MyAttendances />}
+          />
+          <Route
+            path="/client/qr-code"
+            element={<MyQRCode />}
+          />
+          <Route
+            path="/client/profile"
+            element={<MyProfile />}
+          />
         </Route>
       </Route>
 
       <Route element={<RoleRoute allow="admin" />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/members" element={<Members />} />
-          <Route path="/plans" element={<Plans />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/attendances" element={<Attendances />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/audit-logs" element={<AuditLogs />} />
-          <Route path="/gym" element={<GymSettings />} />
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
+
+          <Route
+            path="/members"
+            element={<Members />}
+          />
+
+          <Route
+            path="/members/new"
+            element={<AddMember />}
+          />
+
+          <Route
+            path="/plans"
+            element={<Plans />}
+          />
+
+          <Route
+            path="/subscriptions"
+            element={<Subscriptions />}
+          />
+
+          <Route
+            path="/payments"
+            element={<Payments />}
+          />
+
+          <Route
+            path="/attendances"
+            element={<Attendances />}
+          />
+
+          <Route
+            path="/reports"
+            element={<Reports />}
+          />
+
+          <Route
+            path="/audit-logs"
+            element={<AuditLogs />}
+          />
         </Route>
       </Route>
 
-      <Route path="*" element={<NotFound />} />
+      <Route
+        path="*"
+        element={<NotFound />}
+      />
     </Routes>
   );
 }
