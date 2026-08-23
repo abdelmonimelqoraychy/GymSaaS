@@ -3,7 +3,14 @@ import api, { extractList } from "../services/api";
 import "../styles/admin-tools.css";
 
 const today = new Date().toISOString().slice(0, 10);
-const emptyForm = { member: "", plan: "", start_date: today, is_suspended: false };
+const emptyForm = {
+  member: "",
+  plan: "",
+  start_date: today,
+  is_suspended: false,
+  create_payment: false,
+  payment_method: "CASH",
+};
 
 function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -47,28 +54,77 @@ function Subscriptions() {
     setForm((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
   }
 
-  async function createSubscription(event) {
-    event.preventDefault();
-    try {
-      setSaving(true);
-      setError("");
-      setSuccess("");
-      await api.post("/subscriptions/", {
-        member: Number(form.member),
-        plan: Number(form.plan),
-        start_date: form.start_date,
-        is_suspended: form.is_suspended,
-      });
-      setForm(emptyForm);
-      setShowForm(false);
-      setSuccess("Abonnement créé avec succès.");
-      await loadData();
-    } catch (requestError) {
-      setError(getApiError(requestError, "Impossible de créer cet abonnement."));
-    } finally {
-      setSaving(false);
+async function createSubscription(event) {
+  event.preventDefault();
+
+  try {
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
+    const subscriptionResponse = await api.post("/subscriptions/", {
+      member: Number(form.member),
+      plan: Number(form.plan),
+      start_date: form.start_date,
+      is_suspended: form.is_suspended,
+    });
+
+    const subscription = subscriptionResponse.data;
+
+    if (form.create_payment) {
+      try {
+        await api.post("/payments/", {
+          subscription: subscription.id,
+          amount: Number(
+            subscription.price_at_subscription ||
+            selectedPlan?.price ||
+            0
+          ),
+          method: form.payment_method,
+          reference: "",
+          notes: "Paiement enregistré automatiquement lors de la création de l’abonnement.",
+        });
+      } catch (paymentError) {
+        setForm(emptyForm);
+        setShowForm(false);
+
+        setSuccess(
+          "Abonnement créé, mais le paiement automatique n’a pas pu être enregistré."
+        );
+
+        setError(
+          getApiError(
+            paymentError,
+            "Erreur lors de la création automatique du paiement."
+          )
+        );
+
+        await loadData();
+        return;
+      }
     }
+
+    setForm(emptyForm);
+    setShowForm(false);
+
+    setSuccess(
+      form.create_payment
+        ? "Abonnement et paiement créés avec succès."
+        : "Abonnement créé avec succès."
+    );
+
+    await loadData();
+  } catch (requestError) {
+    setError(
+      getApiError(
+        requestError,
+        "Impossible de créer cet abonnement."
+      )
+    );
+  } finally {
+    setSaving(false);
   }
+}
 
   async function toggleSuspension(subscription) {
     try {
@@ -137,6 +193,34 @@ function Subscriptions() {
             </div>
             <div className="admin-field"><label htmlFor="subscription-start">Date de début</label><input id="subscription-start" name="start_date" type="date" value={form.start_date} onChange={handleChange} required /></div>
             <label className="checkbox-field"><input type="checkbox" name="is_suspended" checked={form.is_suspended} onChange={handleChange} /> Créer l'abonnement suspendu</label>
+           <label className="checkbox-field">
+  <input
+    type="checkbox"
+    name="create_payment"
+    checked={form.create_payment}
+    onChange={handleChange}
+  />
+  Enregistrer automatiquement le paiement
+</label>
+
+{form.create_payment && (
+  <div className="admin-field">
+    <label htmlFor="subscription-payment-method">
+      Méthode de paiement
+    </label>
+
+    <select
+      id="subscription-payment-method"
+      name="payment_method"
+      value={form.payment_method}
+      onChange={handleChange}
+    >
+      <option value="CASH">Espèces</option>
+      <option value="CARD">Carte</option>
+      <option value="TRANSFER">Virement</option>
+    </select>
+  </div>
+)}
           </div>
           <div className="form-actions">
             <button className="action-button primary" type="submit" disabled={saving}>{saving ? "Création..." : "Créer l’abonnement"}</button>
