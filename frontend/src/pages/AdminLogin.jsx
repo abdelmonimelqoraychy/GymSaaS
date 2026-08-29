@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getApiError } from "../services/api";
 import { isAdmin } from "../services/roles";
 import "../styles/admin-login.css";
@@ -45,6 +46,7 @@ function AdminLogin() {
       <Link className="brand admin-login-brand" to="/">GYM<span>SAAS</span></Link>
 
       <form className="admin-login-card" onSubmit={handleSubmit}>
+        <div className="auth-language-row"><LanguageSwitcher /></div>
         <span className="admin-badge">ESPACE DE GESTION</span>
         <h1>Connexion équipe</h1>
         <p>Accès réservé aux super-administrateurs et coordinateurs.</p>

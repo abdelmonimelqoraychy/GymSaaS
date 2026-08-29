@@ -10,11 +10,25 @@ function DashboardLayout() {
 
   return (
     <div className="dashboard-shell">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-      {menuOpen && <button className="sidebar-backdrop" type="button" aria-label="Fermer le menu" onClick={() => setMenuOpen(false)} />}
+      <Sidebar
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
+
+      {menuOpen && (
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          aria-label="Fermer le menu"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       <div className="dashboard-content">
-        <Topbar onMenuClick={() => setMenuOpen(true)} />
+        <Topbar
+          onMenuClick={() => setMenuOpen(true)}
+        />
+
         <main className="dashboard-outlet">
           <Outlet />
         </main>

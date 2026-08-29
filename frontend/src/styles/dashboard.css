@@ -553,3 +553,80 @@
 @media (max-width: 540px) {
   .dashboard-summary-cards { grid-template-columns: 1fr; }
 }
+.analytics-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.analytics-chart {
+  padding: 20px;
+}
+
+.analytics-chart svg {
+  width: 100%;
+  height: 250px;
+}
+
+.analytics-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #7e8792;
+  font-size: 10px;
+}
+
+.analytics-bars {
+  height: 220px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 10px;
+  padding: 25px;
+}
+
+.analytics-bar-item {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.analytics-bar {
+  width: min(38px, 70%);
+  border-radius: 8px 8px 2px 2px;
+  background:
+    linear-gradient(
+      180deg,
+      #ff7a36,
+      #ff4f0d
+    );
+}
+
+.analytics-bar-item span {
+  color: #7e8792;
+  font-size: 10px;
+}
+
+.analytics-plan-list {
+  padding: 15px 20px;
+}
+
+.analytics-plan-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom:
+    1px solid #252c34;
+}
+
+.analytics-plan-row strong {
+  color: #ff6a26;
+}
+
+@media (max-width: 900px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -122,8 +122,8 @@ INSTALLED_APPS = [
     "attendances",
     "reports",
     "auditlogs",
+    "courses.apps.CoursesConfig",
 ]
-
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

@@ -51,3 +51,19 @@
   .admin-login-card { padding: 26px 20px; border-radius: 16px; }
   .admin-login-card h1 { font-size: 31px; }
 }
+
+.auth-language-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+html[dir="rtl"] .admin-login-page,
+html[dir="rtl"] .admin-login-card {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] .admin-login-card input:not([type="email"]) {
+  text-align: right;
+}

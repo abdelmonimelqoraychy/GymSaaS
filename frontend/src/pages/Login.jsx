@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getApiError } from "../services/api";
 import { homeForUser } from "../services/roles";
 import heroImage from "../assets/hero.png";
@@ -49,6 +50,7 @@ function Login() {
 
       <section className="login-form-panel">
         <form className="login-card" onSubmit={handleSubmit}>
+          <div className="auth-language-row"><LanguageSwitcher /></div>
           <Link className="login-mobile-brand brand" to="/">GYM<span>SAAS</span></Link>
           <span className="eyebrow">CONNEXION</span>
           <h2>Bienvenue</h2>
