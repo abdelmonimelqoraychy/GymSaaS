@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import "../styles/register.css";
 
 const initialForm = {
@@ -76,6 +77,7 @@ function Register() {
         </div>
 
         <form className="register-card" onSubmit={handleSubmit}>
+          <div className="auth-language-row"><LanguageSwitcher /></div>
           <div>
             <span className="eyebrow">INSCRIPTION</span>
             <h2>Créer mon compte</h2>

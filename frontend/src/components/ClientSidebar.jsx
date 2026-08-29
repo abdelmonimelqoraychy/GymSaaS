@@ -1,19 +1,21 @@
 import { NavLink, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../context/AuthContext";
 
 const links = [
-  ["/client", "Mon espace", "home"],
-  ["/client/subscription", "Mon abonnement", "calendar"],
-  ["/client/payments", "Mes paiements", "card"],
-  ["/client/attendances", "Mes présences", "activity"],
-  ["/client/qr-code", "Mon QR", "qr"],
-  ["/client/profile", "Mon profil", "user"],
+  ["/client", "clientNavigation.home", "home"],
+  ["/client/subscription", "clientNavigation.subscription", "calendar"],
+  ["/client/payments", "clientNavigation.payments", "card"],
+  ["/client/attendances", "clientNavigation.attendances", "activity"],
+  ["/client/qr-code", "clientNavigation.qr", "qr"],
+  ["/client/profile", "clientNavigation.profile", "user"],
 ];
 
 function ClientSidebar() {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { t } = useTranslation();
 
   async function handleLogout() {
     await logout();
@@ -23,27 +25,31 @@ function ClientSidebar() {
   return (
     <aside className="client-sidebar">
       <div className="client-brand">
-        <strong>GYM<span>SAAS</span></strong>
-        <small>Espace adhérent</small>
+        <strong>
+          GYM<span>SAAS</span>
+        </strong>
+        <small>{t("clientNavigation.memberSpace")}</small>
       </div>
 
       <nav className="client-nav">
-        {links.map(([to, label, icon]) => (
+        {links.map(([to, translationKey, icon]) => (
           <NavLink
             key={to}
             to={to}
             end={to === "/client"}
-            className={({ isActive }) => `client-nav-link ${isActive ? "active" : ""}`}
+            className={({ isActive }) =>
+              `client-nav-link ${isActive ? "active" : ""}`
+            }
           >
             <ClientIcon name={icon} />
-            <span>{label}</span>
+            <span>{t(translationKey)}</span>
           </NavLink>
         ))}
       </nav>
 
       <button className="client-logout" type="button" onClick={handleLogout}>
         <ClientIcon name="logout" />
-        <span>Déconnexion</span>
+        <span>{t("navigation.logout")}</span>
       </button>
     </aside>
   );

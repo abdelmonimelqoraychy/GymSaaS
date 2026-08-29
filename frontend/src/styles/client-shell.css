@@ -106,3 +106,86 @@
   .client-topbar { height: 66px; padding: 0 15px; }
   .client-user-chip > div { display: none; }
 }
+
+/* =====================================================
+   LANGUE + RTL ESPACE ADHÉRENT
+===================================================== */
+
+.client-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.client-topbar-intro {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+html[dir="rtl"] .client-shell {
+  direction: rtl;
+}
+
+html[dir="rtl"] .client-sidebar {
+  left: auto;
+  right: 0;
+  border-right: 0;
+  border-left: 1px solid #202730;
+}
+
+html[dir="rtl"] .client-main {
+  margin-left: 0;
+  margin-right: 232px;
+}
+
+html[dir="rtl"] .client-nav-link,
+html[dir="rtl"] .client-logout,
+html[dir="rtl"] .client-brand {
+  text-align: right;
+}
+
+html[dir="rtl"] .client-topbar,
+html[dir="rtl"] .client-outlet,
+html[dir="rtl"] .client-page {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] .client-topbar-actions .language-switcher {
+  direction: ltr;
+}
+
+html[dir="rtl"] .client-user-chip {
+  direction: rtl;
+}
+
+html[dir="rtl"] .client-page input:not([type="email"]):not([type="number"]):not([type="date"]),
+html[dir="rtl"] .client-page textarea,
+html[dir="rtl"] .client-page select {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] .client-page input[type="email"],
+html[dir="rtl"] .client-page input[type="number"],
+html[dir="rtl"] .client-page input[type="date"] {
+  direction: ltr;
+}
+
+@media (max-width: 850px) {
+  html[dir="rtl"] .client-main {
+    margin-left: 0;
+    margin-right: 72px;
+  }
+}
+
+@media (max-width: 560px) {
+  html[dir="rtl"] .client-main {
+    margin-right: 0;
+  }
+
+  .client-topbar-actions {
+    gap: 8px;
+  }
+}
