@@ -3,8 +3,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.decorators.http import require_safe
 
 
+@require_safe
 def health_check(request):
     return JsonResponse(
         {
@@ -67,18 +69,16 @@ urlpatterns = [
         include("members.urls"),
     ),
 
-    path(
-        "api-auth/",
-        include("rest_framework.urls"),
-    ),
-    path(
-    "api/",
-    include("courses.urls"),
-),
 ]
 
 
 if settings.DEBUG:
+    urlpatterns += [
+        path(
+            "api-auth/",
+            include("rest_framework.urls"),
+        ),
+    ]
     urlpatterns += static(
         settings.MEDIA_URL,
         document_root=settings.MEDIA_ROOT,

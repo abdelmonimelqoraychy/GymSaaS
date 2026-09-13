@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -9,12 +10,45 @@ User = get_user_model()
 
 class AuthenticationAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.password = "TestPassword123!"
         self.user = User.objects.create_user(
             username="testuser",
             password=self.password,
             email="test@example.com",
             role=User.Role.MEMBER,
+        )
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_login_is_throttled_after_five_attempts(self):
+        for _ in range(5):
+            response = self.client.post(
+                reverse("auth-login"),
+                {
+                    "username": self.user.username,
+                    "password": "incorrect-password",
+                },
+                format="json",
+            )
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+        response = self.client.post(
+            reverse("auth-login"),
+            {
+                "username": self.user.username,
+                "password": "incorrect-password",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_429_TOO_MANY_REQUESTS,
         )
 
     def test_login_returns_jwt_pair_and_user(self):

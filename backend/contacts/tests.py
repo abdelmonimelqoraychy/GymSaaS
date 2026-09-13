@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -7,6 +8,7 @@ from .models import ContactMessage
 
 class ContactMessageAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.url = reverse("contact-create")
         self.valid_data = {
             "full_name": "Abdelmonim El Qoraychy",
@@ -18,6 +20,32 @@ class ContactMessageAPITests(APITestCase):
                 "d'informations sur votre salle."
             ),
         }
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_contact_form_is_throttled_after_five_messages(self):
+        for _ in range(5):
+            response = self.client.post(
+                self.url,
+                self.valid_data,
+                format="json",
+            )
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_201_CREATED,
+            )
+
+        response = self.client.post(
+            self.url,
+            self.valid_data,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_429_TOO_MANY_REQUESTS,
+        )
 
     def test_anonymous_user_can_create_contact_message(self):
         response = self.client.post(

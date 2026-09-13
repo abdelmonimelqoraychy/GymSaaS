@@ -16,6 +16,7 @@ from .models import (
 from .serializers import (
     CoachSerializer,
     CourseSerializer,
+    PublicCoachSerializer,
 )
 
 
@@ -65,6 +66,12 @@ class CoachViewSet(
         "first_name",
         "last_name",
     )
+
+    def get_serializer_class(self):
+        if is_manager(self.request.user):
+            return CoachSerializer
+
+        return PublicCoachSerializer
 
     def get_queryset(self):
         queryset = (

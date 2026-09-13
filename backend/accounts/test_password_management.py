@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -10,6 +11,7 @@ User = get_user_model()
 
 class ChangePasswordAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.old_password = "StrongPassword123!"
         self.new_password = "NewStrongPassword456!"
 
@@ -34,6 +36,9 @@ class ChangePasswordAPITests(APITestCase):
         self.login_url = reverse(
             "auth-login",
         )
+
+    def tearDown(self):
+        cache.clear()
 
     def test_anonymous_user_cannot_change_password(
         self,

@@ -5,6 +5,7 @@ import {
   getRefreshToken,
   getStoredUser,
   saveSession,
+  saveUser,
 } from "./session";
 
 export function getToken() {
@@ -42,6 +43,6 @@ export async function logout() {
 
 export async function getCurrentUser() {
   const response = await api.get("/auth/me/");
-  localStorage.setItem("authUser", JSON.stringify(response.data));
+  saveUser(response.data);
   return response.data;
 }

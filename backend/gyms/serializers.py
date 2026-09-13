@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from config.upload_validation import validate_image_upload
+
 from .models import Gym
 
 
@@ -43,3 +45,6 @@ class GymSerializer(serializers.ModelSerializer):
             )
 
         return obj.logo.url
+
+    def validate_logo(self, value):
+        return validate_image_upload(value)

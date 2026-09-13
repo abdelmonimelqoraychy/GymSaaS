@@ -8,3 +8,4 @@ class ContactMessageCreateView(generics.CreateAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
     permission_classes = (permissions.AllowAny,)
+    throttle_scope = "contact"

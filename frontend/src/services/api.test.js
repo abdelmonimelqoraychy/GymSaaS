@@ -11,6 +11,7 @@ class StorageMock {
 }
 
 if (!globalThis.localStorage) globalThis.localStorage = new StorageMock();
+if (!globalThis.sessionStorage) globalThis.sessionStorage = new StorageMock();
 
 const originalApiAdapter = api.defaults.adapter;
 const originalRefreshAdapter = refreshApi.defaults.adapter;
@@ -26,7 +27,10 @@ function unauthorized(config) {
   return error;
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
 
 afterEach(() => {
   api.defaults.adapter = originalApiAdapter;
@@ -35,7 +39,7 @@ afterEach(() => {
 
 describe("intercepteurs Axios JWT", () => {
   it("envoie l'access token avec le schéma Bearer", async () => {
-    localStorage.setItem("accessToken", "access-valide");
+    sessionStorage.setItem("accessToken", "access-valide");
     api.defaults.adapter = async (config) => {
       expect(config.headers?.Authorization).toBe("Bearer access-valide");
       return response(config);
@@ -45,7 +49,7 @@ describe("intercepteurs Axios JWT", () => {
   });
 
   it("n'envoie aucun token lorsque skipAuth est actif", async () => {
-    localStorage.setItem("accessToken", "access-existant");
+    sessionStorage.setItem("accessToken", "access-existant");
     localStorage.setItem("authToken", "ancien-token");
     api.defaults.adapter = async (config) => {
       expect(config.skipAuth).toBe(true);
@@ -71,8 +75,8 @@ describe("intercepteurs Axios JWT", () => {
   });
 
   it("renouvelle le token puis rejoue une requête protégée une seule fois", async () => {
-    localStorage.setItem("accessToken", "access-expire");
-    localStorage.setItem("refreshToken", "refresh-initial");
+    sessionStorage.setItem("accessToken", "access-expire");
+    sessionStorage.setItem("refreshToken", "refresh-initial");
     let apiCalls = 0;
     let refreshCalls = 0;
 
@@ -95,13 +99,13 @@ describe("intercepteurs Axios JWT", () => {
     expect(result.data.username).toBe("monim");
     expect(apiCalls).toBe(2);
     expect(refreshCalls).toBe(1);
-    expect(localStorage.getItem("accessToken")).toBe("access-renouvele");
-    expect(localStorage.getItem("refreshToken")).toBe("refresh-tourne");
+    expect(sessionStorage.getItem("accessToken")).toBe("access-renouvele");
+    expect(sessionStorage.getItem("refreshToken")).toBe("refresh-tourne");
   });
 
   it("utilise le refresh token tourné si une déconnexion doit être rejouée", async () => {
-    localStorage.setItem("accessToken", "access-expire");
-    localStorage.setItem("refreshToken", "refresh-initial");
+    sessionStorage.setItem("accessToken", "access-expire");
+    sessionStorage.setItem("refreshToken", "refresh-initial");
     let apiCalls = 0;
 
     api.defaults.adapter = async (config) => {
@@ -120,9 +124,9 @@ describe("intercepteurs Axios JWT", () => {
   });
 
   it("supprime toute la session si le refresh token est refusé", async () => {
-    localStorage.setItem("accessToken", "access-expire");
-    localStorage.setItem("refreshToken", "refresh-expire");
-    localStorage.setItem("authUser", JSON.stringify({ username: "monim" }));
+    sessionStorage.setItem("accessToken", "access-expire");
+    sessionStorage.setItem("refreshToken", "refresh-expire");
+    sessionStorage.setItem("authUser", JSON.stringify({ username: "monim" }));
     localStorage.setItem("authToken", "ancien-token");
 
     api.defaults.adapter = async (config) => { throw unauthorized(config); };
@@ -133,5 +137,8 @@ describe("intercepteurs Axios JWT", () => {
     expect(localStorage.getItem("refreshToken")).toBeNull();
     expect(localStorage.getItem("authUser")).toBeNull();
     expect(localStorage.getItem("authToken")).toBeNull();
+    expect(sessionStorage.getItem("accessToken")).toBeNull();
+    expect(sessionStorage.getItem("refreshToken")).toBeNull();
+    expect(sessionStorage.getItem("authUser")).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -11,6 +12,7 @@ User = get_user_model()
 
 class PublicRegistrationAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.register_url = reverse(
             "auth-register",
         )
@@ -31,6 +33,41 @@ class PublicRegistrationAPITests(APITestCase):
             "address": "Casablanca",
             "emergency_phone": "0611111111",
         }
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_registration_is_throttled_after_three_attempts(self):
+        for index in range(3):
+            registration_data = {
+                **self.valid_data,
+                "username": f"member-{index}",
+                "email": f"member-{index}@test.com",
+            }
+            response = self.client.post(
+                self.register_url,
+                registration_data,
+                format="json",
+            )
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_201_CREATED,
+            )
+
+        response = self.client.post(
+            self.register_url,
+            {
+                **self.valid_data,
+                "username": "member-blocked",
+                "email": "member-blocked@test.com",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_429_TOO_MANY_REQUESTS,
+        )
 
     def test_visitor_can_create_member_account(self):
         response = self.client.post(

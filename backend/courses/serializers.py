@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from config.upload_validation import validate_image_upload
+
 from .models import (
     Coach,
     Course,
@@ -54,6 +56,25 @@ class CoachSerializer(serializers.ModelSerializer):
             )
 
         return obj.photo.url
+
+    def validate_photo(self, value):
+        return validate_image_upload(value)
+
+
+class PublicCoachSerializer(CoachSerializer):
+    """Informations d'un coach qui peuvent être affichées publiquement."""
+
+    class Meta(CoachSerializer.Meta):
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "full_name",
+            "photo_url",
+            "specialty",
+            "bio",
+        )
+        read_only_fields = fields
 
 
 class CourseSerializer(serializers.ModelSerializer):

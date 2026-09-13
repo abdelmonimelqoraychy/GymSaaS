@@ -43,6 +43,20 @@ def get_env_list(name, default=""):
     ]
 
 
+def get_env_int(name, default):
+    value = os.getenv(name)
+
+    if value is None:
+        return default
+
+    try:
+        return int(value)
+    except ValueError as error:
+        raise ImproperlyConfigured(
+            f"La variable {name} doit être un nombre entier."
+        ) from error
+
+
 # ---------------------------------------------------------------------
 # Sécurité générale
 # ---------------------------------------------------------------------
@@ -84,6 +98,12 @@ SECURE_SSL_REDIRECT = get_env_bool(
     not DEBUG,
 )
 
+# Le contrôle Railway utilise le réseau HTTP interne. Cette exception permet
+# de conserver la redirection HTTPS sur toutes les autres routes.
+SECURE_REDIRECT_EXEMPT = [
+    r"^health/$",
+]
+
 SESSION_COOKIE_SECURE = get_env_bool(
     "DJANGO_SESSION_COOKIE_SECURE",
     not DEBUG,
@@ -92,6 +112,38 @@ SESSION_COOKIE_SECURE = get_env_bool(
 CSRF_COOKIE_SECURE = get_env_bool(
     "DJANGO_CSRF_COOKIE_SECURE",
     not DEBUG,
+)
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+SECURE_HSTS_SECONDS = get_env_int(
+    "DJANGO_HSTS_SECONDS",
+    0 if DEBUG else 31_536_000,
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = get_env_bool(
+    "DJANGO_HSTS_INCLUDE_SUBDOMAINS",
+    not DEBUG,
+)
+SECURE_HSTS_PRELOAD = get_env_bool(
+    "DJANGO_HSTS_PRELOAD",
+    not DEBUG,
+)
+
+# Évite qu'une requête volumineuse épuise inutilement la mémoire du service.
+DATA_UPLOAD_MAX_MEMORY_SIZE = get_env_int(
+    "DJANGO_MAX_REQUEST_SIZE",
+    6 * 1024 * 1024,
+)
+FILE_UPLOAD_MAX_MEMORY_SIZE = get_env_int(
+    "DJANGO_MAX_FILE_SIZE",
+    5 * 1024 * 1024,
 )
 
 
@@ -262,6 +314,9 @@ AUTH_PASSWORD_VALIDATORS = [
             "django.contrib.auth.password_validation."
             "MinimumLengthValidator"
         ),
+        "OPTIONS": {
+            "min_length": 12,
+        },
     },
     {
         "NAME": (
@@ -348,7 +403,27 @@ REST_FRAMEWORK = {
             "IsAuthenticated"
         ),
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        (
+            "rest_framework.throttling."
+            "ScopedRateThrottle"
+        ),
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "login": "5/minute",
+        "registration": "3/hour",
+        "token_refresh": "20/hour",
+        "token_verify": "30/hour",
+        "password_change": "5/hour",
+        "logout": "20/hour",
+        "contact": "5/hour",
+    },
 }
+
+if not DEBUG:
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [
+        "rest_framework.renderers.JSONRenderer",
+    ]
 
 
 # ---------------------------------------------------------------------

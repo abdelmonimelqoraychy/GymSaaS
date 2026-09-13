@@ -12,6 +12,10 @@ from rest_framework_simplejwt.token_blacklist.models import (
     OutstandingToken,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+    TokenVerifyView,
+)
 
 from auditlogs.models import AuditLog
 from auditlogs.services import create_audit_log
@@ -50,6 +54,7 @@ class RegisterView(APIView):
     permission_classes = (
         permissions.AllowAny,
     )
+    throttle_scope = "registration"
 
     def post(self, request):
         serializer = RegistrationSerializer(
@@ -100,6 +105,7 @@ class LoginView(APIView):
     permission_classes = (
         permissions.AllowAny,
     )
+    throttle_scope = "login"
 
     def post(self, request):
         username = request.data.get(
@@ -175,6 +181,7 @@ class LogoutView(APIView):
     permission_classes = (
         permissions.IsAuthenticated,
     )
+    throttle_scope = "logout"
 
     def post(self, request):
         refresh_value = request.data.get(
@@ -256,6 +263,7 @@ class ChangePasswordView(APIView):
     permission_classes = (
         permissions.IsAuthenticated,
     )
+    throttle_scope = "password_change"
 
     def post(self, request):
         serializer = ChangePasswordSerializer(
@@ -297,3 +305,11 @@ class ChangePasswordView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ScopedTokenRefreshView(TokenRefreshView):
+    throttle_scope = "token_refresh"
+
+
+class ScopedTokenVerifyView(TokenVerifyView):
+    throttle_scope = "token_verify"

@@ -3,10 +3,23 @@ export const REFRESH_TOKEN_KEY = "refreshToken";
 export const USER_KEY = "authUser";
 export const LEGACY_TOKEN_KEY = "authToken";
 
-export function getAccessToken() {
-  const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+function clearLegacyLocalStorage() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+}
 
-  if (!access && localStorage.getItem(LEGACY_TOKEN_KEY)) {
+export function getAccessToken() {
+  const access = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+
+  if (
+    !access &&
+    (localStorage.getItem(ACCESS_TOKEN_KEY) ||
+      localStorage.getItem(REFRESH_TOKEN_KEY) ||
+      localStorage.getItem(USER_KEY) ||
+      localStorage.getItem(LEGACY_TOKEN_KEY))
+  ) {
     clearSession();
     return null;
   }
@@ -15,17 +28,17 @@ export function getAccessToken() {
 }
 
 export function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  return sessionStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export function getStoredUser() {
-  const raw = localStorage.getItem(USER_KEY);
+  const raw = sessionStorage.getItem(USER_KEY);
   if (!raw) return null;
 
   try {
     return JSON.parse(raw);
   } catch {
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
     return null;
   }
 }
@@ -35,19 +48,25 @@ export function saveTokens(access, refresh) {
     throw new Error("La réponse d’authentification ne contient pas la paire JWT complète.");
   }
 
-  localStorage.setItem(ACCESS_TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, access);
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+  clearLegacyLocalStorage();
+}
+
+export function saveUser(user) {
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.removeItem(USER_KEY);
 }
 
 export function saveSession(access, refresh, user) {
   saveTokens(access, refresh);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  saveUser(user);
 }
 
 export function clearSession() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+  clearLegacyLocalStorage();
 }
