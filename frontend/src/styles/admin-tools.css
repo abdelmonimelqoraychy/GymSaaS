@@ -58,6 +58,221 @@
   color: #86efac;
 }
 
+.member-row-actions {
+  flex-wrap: nowrap;
+}
+
+
+/* =====================================================
+   FICHE ADHÉRENT
+===================================================== */
+
+.member-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 8, 12, .74);
+  backdrop-filter: blur(7px);
+}
+
+.member-dialog {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border: 1px solid #303944;
+  border-radius: 20px;
+  background: #12171d;
+  color: #f8fafc;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, .5);
+}
+
+.member-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 25px 27px;
+  border-bottom: 1px solid #29313a;
+}
+
+.member-dialog-kicker {
+  color: #ff6328;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.member-dialog-header h2 {
+  margin: 7px 0 3px;
+  color: #fff;
+  font-size: 27px;
+}
+
+.member-dialog-header p {
+  margin: 0;
+  color: #7f8994;
+  font-size: 12px;
+}
+
+.member-dialog-close {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border: 1px solid #343d47;
+  border-radius: 10px;
+  background: #181e24;
+  color: #b7c0c9;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.member-detail-grid,
+.member-dialog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  padding: 25px 27px 10px;
+}
+
+.member-detail {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid #29313a;
+  border-radius: 12px;
+  background: #0e1318;
+}
+
+.member-detail span,
+.member-dialog-grid label > span {
+  color: #87919c;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.member-detail strong {
+  overflow-wrap: anywhere;
+  color: #f6f8fa;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.member-dialog-wide {
+  grid-column: 1 / -1;
+}
+
+.member-dialog-form {
+  padding-bottom: 2px;
+}
+
+.member-dialog-grid label {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.member-dialog-grid input,
+.member-dialog-grid textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #343d47;
+  border-radius: 10px;
+  outline: none;
+  background: #0d1217;
+  color: #fff;
+}
+
+.member-dialog-grid input {
+  min-height: 45px;
+}
+
+.member-dialog-grid textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.member-dialog-grid input:focus,
+.member-dialog-grid textarea:focus {
+  border-color: #ff5a1f;
+}
+
+.member-dialog-readonly input {
+  color: #87919c;
+  background: #151a20;
+  cursor: not-allowed;
+}
+
+.member-dialog-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 13px 27px 0;
+  color: #cbd2da;
+  font-size: 13px;
+}
+
+.member-dialog-checkbox input {
+  width: 17px;
+  height: 17px;
+  accent-color: #ff5a1f;
+}
+
+.member-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 22px 27px 27px;
+}
+
+html[dir="rtl"] .member-dialog {
+  direction: rtl;
+  text-align: right;
+}
+
+@media (max-width: 620px) {
+  .member-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .member-dialog {
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .member-dialog-header,
+  .member-detail-grid,
+  .member-dialog-grid {
+    padding-inline: 18px;
+  }
+
+  .member-detail-grid,
+  .member-dialog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-dialog-wide {
+    grid-column: 1;
+  }
+
+  .member-dialog-checkbox {
+    margin-inline: 18px;
+  }
+
+  .member-dialog-actions {
+    padding-inline: 18px;
+  }
+
+  .member-dialog-actions .action-button {
+    flex: 1 1 100%;
+  }
+}
+
 .action-button:disabled {
   cursor: not-allowed;
   opacity: .55;

@@ -55,16 +55,19 @@
   width: min(100%, 430px);
   display: grid;
   gap: 12px;
+  color: #eef2f7;
 }
 
 .login-card h2 {
   margin: 5px 0 0;
+  color: #ffffff;
   font-size: 42px;
   letter-spacing: -1.5px;
 }
 
 .login-card .muted {
   margin: 0 0 18px;
+  color: #9ca6b2;
 }
 
 .login-card label {
@@ -102,6 +105,12 @@
   background: rgba(145, 36, 41, 0.2);
   color: #ffb5b7;
   font-size: 14px;
+}
+
+.login-card .form-error {
+  color: #ffb5b7;
+  background: rgba(145, 36, 41, 0.2);
+  border-color: #8f3034;
 }
 
 .back-home {

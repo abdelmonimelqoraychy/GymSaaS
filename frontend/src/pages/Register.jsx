@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import PasswordInput from "../components/PasswordInput";
 import "../styles/register.css";
 
 const initialForm = {
@@ -115,7 +116,18 @@ function Field({ label, name, type = "text", value, onChange, error, required = 
   return (
     <label className={`register-field ${wide ? "wide" : ""}`}>
       <span>{label}</span>
-      <input name={name} type={type} value={value} onChange={onChange} required={required} />
+      {type === "password" ? (
+        <PasswordInput
+          id={`register-${name}`}
+          name={name}
+          value={value}
+          onChange={onChange}
+          autoComplete="new-password"
+          required={required}
+        />
+      ) : (
+        <input id={`register-${name}`} name={name} type={type} value={value} onChange={onChange} required={required} />
+      )}
       {error && <small>{error}</small>}
     </label>
   );

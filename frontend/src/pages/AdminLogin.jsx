@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import PasswordInput from "../components/PasswordInput";
 import { getApiError } from "../services/api";
 import { isAdmin } from "../services/roles";
 import "../styles/admin-login.css";
@@ -57,7 +58,14 @@ function AdminLogin() {
         <input id="admin-username" name="username" value={form.username} onChange={handleChange} autoComplete="username" required />
 
         <label htmlFor="admin-password">Mot de passe</label>
-        <input id="admin-password" name="password" type="password" value={form.password} onChange={handleChange} autoComplete="current-password" required />
+        <PasswordInput
+          id="admin-password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          autoComplete="current-password"
+          required
+        />
 
         <button className="btn btn-primary btn-large" type="submit" disabled={loading}>
           {loading ? "Connexion…" : "Connexion administrateur"}

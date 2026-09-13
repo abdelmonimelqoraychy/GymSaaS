@@ -18,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import GymSettings from "./pages/GymSettings";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import LegalPage from "./pages/LegalPage";
 import Members from "./pages/Members";
 import NotFound from "./pages/NotFound";
 import Payments from "./pages/Payments";
@@ -79,6 +80,22 @@ function App() {
         path="/admin-login"
         element={
           <AdminLogin />
+        }
+      />
+
+
+      <Route
+        path="/mentions-legales"
+        element={
+          <LegalPage variant="legal" />
+        }
+      />
+
+
+      <Route
+        path="/confidentialite"
+        element={
+          <LegalPage variant="privacy" />
         }
       />
 

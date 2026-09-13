@@ -122,6 +122,11 @@
   display: none;
 }
 
+.public-nav-links > .mobile-login-link,
+.public-nav-links > .mobile-join-link {
+  display: none;
+}
+
 
 /* =====================================================
    HERO
@@ -277,6 +282,93 @@
   margin-right: 8px;
 
   color: var(--orange);
+}
+
+
+/* =====================================================
+   ESPACE RESPONSABLE
+===================================================== */
+
+.management-section {
+  background: #f4f6f8;
+}
+
+.management-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(420px, .95fr);
+  align-items: center;
+  gap: 72px;
+}
+
+.management-copy h2 {
+  max-width: 690px;
+  margin: 12px 0 18px;
+  color: var(--navy);
+  font-size: clamp(36px, 4.6vw, 62px);
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+
+.management-copy p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.management-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.management-contact-link span {
+  color: var(--orange);
+  font-size: 18px;
+}
+
+.management-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.management-feature {
+  min-height: 152px;
+  display: grid;
+  align-content: space-between;
+  gap: 30px;
+  padding: 23px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 16px;
+  background: var(--navy);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.management-feature span {
+  color: var(--orange);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.management-feature strong {
+  max-width: 180px;
+  font-size: 17px;
+  line-height: 1.3;
 }
 
 
@@ -1680,12 +1772,17 @@
 
 
   .coaching-inner,
+  .management-inner,
   .gym-preview-inner,
   .contact-section {
     grid-template-columns:
       1fr;
 
     gap: 36px;
+  }
+
+  .management-inner {
+    gap: 38px;
   }
 
 
@@ -1864,6 +1961,24 @@
       column;
   }
 
+  .management-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .management-actions > * {
+    width: 100%;
+  }
+
+  .management-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-contact-link {
+    justify-content: center;
+    min-height: 46px;
+  }
+
 
   .coaching-actions > * {
     width: 100%;
@@ -1986,10 +2101,19 @@
 
 
   .section-intro-row h2,
+  .management-copy h2,
   .coaching-copy h2,
   .gym-preview-inner h2,
   .contact-copy h2 {
     font-size: 36px;
+  }
+
+  .management-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-feature {
+    min-height: 118px;
   }
 
 
@@ -2032,6 +2156,7 @@ html[dir="rtl"] .public-nav-inner,
 html[dir="rtl"] .public-nav-links,
 html[dir="rtl"] .public-nav-actions,
 html[dir="rtl"] .section-intro-row,
+html[dir="rtl"] .management-inner,
 html[dir="rtl"] .coaching-inner,
 html[dir="rtl"] .gym-preview-inner,
 html[dir="rtl"] .contact-section,
@@ -2045,6 +2170,7 @@ html[dir="rtl"] .public-nav-actions .language-switcher {
 
 html[dir="rtl"] .public-hero-content,
 html[dir="rtl"] .section-intro-row,
+html[dir="rtl"] .management-copy,
 html[dir="rtl"] .coaching-copy,
 html[dir="rtl"] .contact-copy,
 html[dir="rtl"] .contact-form,
@@ -2065,6 +2191,7 @@ html[dir="rtl"] .contact-form input[type="tel"] {
 }
 
 html[dir="rtl"] .hero-actions,
+html[dir="rtl"] .management-actions,
 html[dir="rtl"] .coaching-actions,
 html[dir="rtl"] .public-coaches-cta-actions {
   direction: rtl;

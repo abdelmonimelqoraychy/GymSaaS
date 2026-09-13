@@ -24,6 +24,7 @@
   border-radius: 18px;
   background: #11161c;
   box-shadow: 0 30px 80px rgba(0,0,0,.35);
+  color: #eef2f7;
 }
 
 .admin-badge {
@@ -37,13 +38,14 @@
   letter-spacing: 1.2px;
 }
 
-.admin-login-card h1 { margin: 4px 0 0; font-size: 37px; }
-.admin-login-card > p { margin: 0 0 14px; color: #828c98; line-height: 1.5; }
-.admin-login-card label { font-size: 13px; font-weight: 750; }
+.admin-login-card h1 { margin: 4px 0 0; color: #fff; font-size: 37px; }
+.admin-login-card > p { margin: 0 0 14px; color: #9ca6b2; line-height: 1.5; }
+.admin-login-card label { color: #eef2f7; font-size: 13px; font-weight: 750; }
 .admin-login-card input { min-height: 49px; padding: 0 13px; outline: none; border: 1px solid #313944; border-radius: 10px; background: #0c1015; color: #fff; }
 .admin-login-card input:focus { border-color: #ff5a1f; }
 .admin-login-card .btn { width: 100%; margin-top: 7px; }
 .admin-back { margin-top: 5px; color: #747e89; text-align: center; font-size: 12px; }
+.admin-login-card .form-error { color: #ffb5b7; background: rgba(145, 36, 41, .2); border-color: #8f3034; }
 
 @media (max-width: 560px) {
   .admin-login-page { padding: 84px 16px 24px; align-items: start; }

@@ -31,17 +31,20 @@
   border-radius: 20px;
   background: #11161c;
   box-shadow: 0 35px 90px rgba(0,0,0,.3);
+  color: #eef2f7;
 }
 
-.register-card h2 { margin: 6px 0 0; font-size: 34px; }
+.register-card h2 { margin: 6px 0 0; color: #fff; font-size: 34px; }
 .register-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .register-field { display: grid; gap: 7px; }
 .register-field.wide { grid-column: 1 / -1; }
-.register-field > span { font-size: 12px; font-weight: 750; }
+.register-field > span { color: #d9dfe6; font-size: 12px; font-weight: 750; }
 .register-field input { min-height: 48px; padding: 0 13px; outline: none; border: 1px solid #303844; border-radius: 10px; background: #0c1015; color: #fff; }
 .register-field input:focus { border-color: #ff5a1f; }
 .register-field small { color: #fca5a5; font-size: 11px; }
 .register-submit { width: 100%; }
+.register-card .auth-switch { color: #9ca6b2; }
+.register-card .form-error { color: #ffb5b7; background: rgba(145, 36, 41, .2); border-color: #8f3034; }
 
 @media (max-width: 850px) {
   .register-shell { grid-template-columns: 1fr; gap: 30px; }

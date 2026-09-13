@@ -287,11 +287,12 @@ function Dashboard() {
               label={t(
                 "dashboard.monthlyRevenue",
               )}
-              value={`${formatMoney(
+              value={formatMoney(
                 summary.revenue
                   ?.current_month,
                 locale,
-              )} DH`}
+              )}
+              suffix="DH"
               helper={t(
                 "dashboard.totalRevenue",
                 {
@@ -631,6 +632,7 @@ function MetricCard({
   icon,
   label,
   value,
+  suffix = "",
   helper,
   warning = false,
 }) {
@@ -651,8 +653,11 @@ function MetricCard({
           {label}
         </span>
 
-        <strong>
-          {value}
+        <strong className="metric-value">
+          <span>{value}</span>
+          {suffix && (
+            <em>{suffix}</em>
+          )}
         </strong>
 
         <small>

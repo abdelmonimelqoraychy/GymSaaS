@@ -27,8 +27,8 @@ function Footer() {
         <div>
           <strong>Informations</strong>
           <a href="#contact">Contact</a>
-          <span>Mentions légales — à configurer</span>
-          <span>Confidentialité — à configurer</span>
+          <Link to="/mentions-legales">Mentions légales</Link>
+          <Link to="/confidentialite">Confidentialité</Link>
         </div>
       </div>
       <div className="footer-bottom">

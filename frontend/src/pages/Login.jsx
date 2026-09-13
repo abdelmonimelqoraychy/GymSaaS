@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import PasswordInput from "../components/PasswordInput";
 import { getApiError } from "../services/api";
 import { homeForUser } from "../services/roles";
 import heroImage from "../assets/hero.png";
@@ -62,7 +63,14 @@ function Login() {
           <input id="username" name="username" value={form.username} onChange={handleChange} autoComplete="username" required />
 
           <label htmlFor="password">Mot de passe</label>
-          <input id="password" name="password" type="password" value={form.password} onChange={handleChange} autoComplete="current-password" required />
+          <PasswordInput
+            id="password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            required
+          />
 
           <button className="btn btn-primary btn-large login-submit" type="submit" disabled={loading}>
             {loading ? "Connexion…" : "Se connecter"}

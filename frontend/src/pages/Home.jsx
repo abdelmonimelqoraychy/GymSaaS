@@ -334,6 +334,67 @@ function Home() {
 
 
         {/* =================================================
+            ESPACE RESPONSABLE
+        ================================================= */}
+
+        <section
+          className="management-section"
+          id="management"
+        >
+          <div className="public-section management-inner">
+            <div className="management-copy">
+              <span className="section-kicker">
+                POUR LES RESPONSABLES DE SALLE
+              </span>
+
+              <h2>
+                Gérez votre salle depuis un seul espace.
+              </h2>
+
+              <p>
+                Centralisez les opérations quotidiennes de votre équipe et
+                donnez à chaque adhérent un accès clair à ses informations.
+              </p>
+
+              <div className="management-actions">
+                <Link
+                  className="btn btn-primary btn-large"
+                  to="/admin-login"
+                >
+                  Voir la démonstration administrateur
+                </Link>
+
+                <a
+                  className="management-contact-link"
+                  href="#contact"
+                >
+                  Demander une présentation
+                  <span aria-hidden="true">→</span>
+                </a>
+              </div>
+            </div>
+
+            <div
+              className="management-feature-grid"
+              aria-label="Fonctions de gestion GymSaaS"
+            >
+              {[
+                ["01", "Adhérents et abonnements"],
+                ["02", "Paiements et présences"],
+                ["03", "Coachs et cours"],
+                ["04", "Statistiques et rapports"],
+              ].map(([number, label]) => (
+                <div className="management-feature" key={label}>
+                  <span>{number}</span>
+                  <strong>{label}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+
+        {/* =================================================
             ACTIVITÉS
         ================================================= */}
 
