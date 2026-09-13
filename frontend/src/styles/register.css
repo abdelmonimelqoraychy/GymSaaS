@@ -18,7 +18,7 @@
 
 .register-intro { display: grid; justify-items: start; }
 .register-intro .brand { margin-bottom: 80px; }
-.register-intro h1 { margin: 14px 0; font-size: clamp(44px, 5vw, 70px); line-height: .98; letter-spacing: -3px; text-transform: uppercase; }
+.register-intro h1 { margin: 14px 0; color: #ffffff; font-size: clamp(44px, 5vw, 70px); line-height: .98; letter-spacing: -3px; text-transform: uppercase; }
 .register-intro p { color: #98a1ac; line-height: 1.7; }
 .register-benefits { margin-top: 28px; display: grid; gap: 11px; color: #d1d6dc; font-size: 13px; }
 .register-benefits span::first-letter { color: #ff5a1f; }

@@ -30,6 +30,7 @@
 .login-image-overlay h1 {
   max-width: 720px;
   margin: 16px 0;
+  color: #ffffff;
   font-size: clamp(45px, 5.2vw, 78px);
   line-height: 0.98;
   letter-spacing: -3px;
